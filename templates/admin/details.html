@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="modal fade" id="professionalDetailsModal" tabindex="-1" aria-labelledby="professionalDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="professionalDetailsModalLabel">Professional Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('admin_dashboard') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label for="proId">Pro. ID</label>
+                            <input type="text" class="form-control" id="proId" name="pro_id" value="{{ professional.id }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proName">Name</label>
+                            <input type="text" class="form-control" id="proName" name="name" value="{{ professional.name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proEmail">Email</label>
+                            <input type="email" class="form-control" id="proEmail" name="email" value="{{ professional.email }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proPhone">Phone No</label>
+                            <input type="text" class="form-control" id="proPhone" name="phone" value="{{ professional.phone_number }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proServiceType">Service Type</label>
+                            <input type="text" class="form-control" id="proServiceType" name="service_type" value="{{ professional.service_type }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proExperience">Experience</label>
+                            <input type="text" class="form-control" id="proExperience" name="experience" value="{{ professional.experience }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proAddress">Address</label>
+                            <textarea class="form-control" id="proAddress" name="address" rows="3" readonly>{{ professional.address }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="proPincode">Pin Code</label>
+                            <input type="text" class="form-control" id="proPincode" name="pincode" value="{{ professional.pincode }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proRating">Rating</label>
+                            <input type="text" class="form-control" id="proRating" name="rating" value="{{ professional.rating }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="proStatus">Status</label>
+                            <input type="text" class="form-control" id="proStatus" name="status" value="{{ professional.status }}" readonly>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('customer_dashboard') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label for="cusId">Cus. ID</label>
+                            <input type="text" class="form-control" id="cusId" name="cus_id" value="{{ customer.id }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusName">Name</label>
+                            <input type="text" class="form-control" id="cusName" name="name" value="{{ customer.name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusEmail">Email</label>
+                            <input type="email" class="form-control" id="cusEmail" name="email" value="{{ customer.email }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusPhone">Phone No</label>
+                            <input type="text" class="form-control" id="cusPhone" name="phone" value="{{ customer.phone_number }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusAddress">Address</label>
+                            <textarea class="form-control" id="cusAddress" name="address" rows="3" readonly>{{ customer.address }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusPincode">Pin Code</label>
+                            <input type="text" class="form-control" id="cusPincode" name="pincode" value="{{ customer.pincode }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusTotalRequests">Total Requests</label>
+                            <input type="text" class="form-control" id="cusTotalRequests" name="total_requests" value="{{ customer.total_requests }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="cusStatus">Status</label>
+                            <input type="text" class="form-control" id="cusStatus" name="status" value="{{ customer.status }}" readonly>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Service</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Style for Modal Header */
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+            border-top-left-radius: 0.3rem;
+            border-top-right-radius: 0.3rem;
+        }
+
+        .modal-title {
+            font-weight: bold;
+        }
+
+        .modal-header .close {
+            color: white;
+            opacity: 0.8;
+        }
+
+        .modal-header .close:hover {
+            color: white;
+            opacity: 1;
+        }
+
+        /* Style for Modal Body */
+        .modal-body {
+            padding: 20px 30px;
+        }
+
+        /* Style for Form Fields */
+        .form-group label {
+            font-weight: bold;
+            color: #343a40;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            box-shadow: none;
+            border: 1px solid #ced4da;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        /* Style for Modal Footer Buttons */
+        .modal-footer {
+            padding: 15px 30px;
+        }
+
+        .modal-footer .btn {
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <!-- Edit Service Modal -->
+    <div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editServiceModalLabel">Edit Service</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editServiceForm" method="POST" action="{{ url_for('edit_service') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" id="editServiceId" name="service_id" value="">
+                        <div class="form-group">
+                            <label for="editServiceName">Service Name</label>
+                            <input type="text" class="form-control" id="editServiceName" name="service_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDescription">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="editBasePrice">Base Price</label>
+                            <input type="number" class="form-control" id="editBasePrice" name="base_price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDuration">Duration</label>
+                            <input type="text" class="form-control" id="editDuration" name="duration" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        // Populate the Edit Modal with Service Data
+        $('#editServiceModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget); // Button that triggered the modal
+            var serviceId = button.data('id'); // Extract service ID from data-* attributes
+            var serviceName = button.data('name');
+            var description = button.data('description');
+            var basePrice = button.data('price');
+            var duration = button.data('duration');
+    
+            // Populate the form fields in the modal
+            var modal = $(this);
+            modal.find('#editServiceId').val(serviceId);
+            modal.find('#editServiceName').val(serviceName);
+            modal.find('#editDescription').val(description);
+            modal.find('#editBasePrice').val(basePrice);
+            modal.find('#editDuration').val(duration);
+        });
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - A-Z Household Services</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #f7f8fa, #e2e6ec);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: #ffffff;
+      border-radius: 15px;
+      padding: 40px 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 360px;
+      position: relative;
+    }
+
+    .header-section {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header-section h1 {
+      font-size: 1.8rem;
+      color: #2c3e50;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .header-section p {
+      font-size: 0.95rem;
+      color: #7f8c8d;
+      margin: 0;
+    }
+
+    .form-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .form-control {
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .btn-login {
+      background: #2ecc71;
+      color: #ffffff;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      width: 100%;
+      transition: background 0.3s ease, transform 0.2s ease;
+      margin-bottom: 20px;
+    }
+
+    .btn-login:hover {
+      background: #27ae60;
+      transform: translateY(-2px);
+    }
+
+    .register-buttons {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .register-buttons a {
+      background: #3498db;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      transition: background 0.3s ease, transform 0.2s ease;
+      flex: 1;
+      text-align: center;
+      margin: 0 5px;
+    }
+
+    .register-buttons a:hover {
+      background: #2980b9;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  {% extends "base.html" %}
+
+  {% block title %}Login - A-Z Household Services{% endblock %}
+
+  {% block content %}
+  <div class="login-container">
+    <!-- Header Section -->
+    <div class="header-section">
+      <h1>A-Z Household Services</h1>
+      <p>Your Trusted Partner for Household Needs</p>
+    </div>
+
+    <!-- Login Form -->
+    <form method="POST" action="{{ url_for('login') }}">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        {{ form.email(class_="form-control", placeholder="Enter your email") }}
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        {{ form.password(class_="form-control", placeholder="Enter your password") }}
+      </div>
+      {{ form.submit(class_="btn btn-login") }}
+    </form>
+
+    <!-- Register Buttons -->
+    <div class="register-buttons">
+      <a href="{{ url_for('customer_signup') }}">Register as Customer</a>
+      <a href="{{ url_for('professional_signup') }}">Register as Professional</a>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+{% endblock %}
