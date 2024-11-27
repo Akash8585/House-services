@@ -13,22 +13,50 @@ def hash_password(password):
 def seed_users():
     # Create an admin user
     admin = Admin(
-    id="ADMIN1",
-    name="Admin User",
-    email="admin@example.com",
-    password=generate_password_hash("admin123", method="pbkdf2:sha256"),
-    role="admin"
-)
+        id="ADMIN1",
+        name="Admin User",
+        email="admin@example.com",
+        password=hash_password("admin123"),
+        role="admin"
+    )
     db.session.add(admin)
-    db.session.commit()
 
-    # Create professionals
+    # Create a test professional
+    test_professional = Professional(
+        id="PROF001",
+        name="John Doe",
+        email="john.professional@example.com",
+        password=hash_password("professional123"),
+        address="123 Professional St, City",
+        pincode="123456",
+        phone_number="9876543210",
+        role="professional",
+        service_type="Plumbing",
+        experience=5,
+        status="approved"
+    )
+    db.session.add(test_professional)
+
+    # Create a test customer
+    test_customer = Customer(
+        id="CUST001",
+        name="Jane Smith",
+        email="jane.customer@example.com",
+        password=hash_password("customer123"),
+        address="456 Customer Ave, Town",
+        pincode="654321",
+        phone_number="9876543211",
+        role="customer"
+    )
+    db.session.add(test_customer)
+
+    # Create additional professionals
     for _ in range(40):
         professional = Professional(
             id=fake.unique.uuid4()[:6].upper(),
             name=fake.name(),
             email=fake.email(),
-            password=generate_password_hash(fake.password()),
+            password=hash_password(fake.password()),
             address=fake.address(),
             pincode=fake.postcode(),
             phone_number=fake.phone_number(),
@@ -39,13 +67,13 @@ def seed_users():
         )
         db.session.add(professional)
 
-    # Create customers
+    # Create additional customers
     for _ in range(60):
         customer = Customer(
             id=fake.unique.uuid4()[:6].upper(),
             name=fake.name(),
             email=fake.email(),
-            password=generate_password_hash(fake.password()),
+            password=hash_password(fake.password()),
             address=fake.address(),
             pincode=fake.postcode(),
             phone_number=fake.phone_number(),
@@ -69,7 +97,7 @@ def seed_services():
             service_name=service["name"],
             service_description=service["description"],
             price=service["price"],
-            duration=service["duration"]  # Ensure duration is included
+            duration=service["duration"]
         ))
 
     db.session.commit()
@@ -77,7 +105,7 @@ def seed_services():
 def seed_requests():
     # Fetch customers and professionals
     customers = Customer.query.all()
-    professionals = Professional.query.filter_by(status="approved").all()  # Only approved professionals
+    professionals = Professional.query.filter_by(status="approved").all()
     services = Service.query.all()
 
     for _ in range(50):
@@ -90,11 +118,15 @@ def seed_requests():
 
         request_date = fake.date_this_year()
 
-        # Set request status
-        status = "Pending" if not professional else random.choice(["In Progress", "Completed"])
+        # Determine status
+        if not professional:
+            status = "requested"
+        else:
+            status = random.choice(["accepted", "pending", "in progress", "review pending", "closed"])
+
         completion_date = None
-        if status == "Completed":
-            completion_date = request_date + timedelta(days=random.randint(1, 10))
+        if status in ["review pending", "closed"]:
+            completion_date = request_date
 
         db.session.add(Request(
             id=fake.unique.uuid4()[:6].upper(),
@@ -108,9 +140,10 @@ def seed_requests():
 
     db.session.commit()
 
+
 def seed_feedbacks():
     # Fetch completed requests
-    completed_requests = Request.query.filter_by(status="Completed").all()
+    completed_requests = Request.query.filter_by(status="closed").all()
 
     for request in completed_requests:
         db.session.add(Feedback(
@@ -150,7 +183,7 @@ def seed_database():
     print("Database seeded successfully!")
 
 if __name__ == "__main__":
-    from app import app  # Import app from app.py
+    from app import app
     with app.app_context():
-        db.create_all()  # Ensure tables are created
+        db.create_all()
         seed_database()

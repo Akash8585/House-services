@@ -78,11 +78,11 @@ body {
                 <select id="status" name="status" class="form-control">
                     <option value="">All</option>
                     {% if entity == 'service_requests' %}
-                        <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
-                        <option value="In Progress" {% if status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                        <option value="Completed" {% if status == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="requested" {% if status == 'requested' %}selected{% endif %}>Requested</option>
+                    <option value="accepted" {% if status not in ['requested', 'closed'] %}selected{% endif %}>Accepted</option>
+                    <option value="closed" {% if status == 'closed' %}selected{% endif %}>Closed</option>
                     {% elif entity == 'professionals' %}
-                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option va  lue="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
                         <option value="blocked" {% if status == 'blocked' %}selected{% endif %}>Blocked</option>
                     {% elif entity == 'customers' %}

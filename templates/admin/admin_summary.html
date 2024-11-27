@@ -25,7 +25,6 @@
         align-items: center;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-
     .container-box {
         background-color: #ffffff;
         padding: 20px;
@@ -45,7 +44,6 @@
         justify-content: space-between;
         margin-bottom: 30px;
     }
-
     .stat-box {
         background-color: #f8f9fa;
         padding: 15px;
@@ -66,7 +64,6 @@
         max-height: 300px;
         overflow-y: auto;
     }
-
     .table {
         width: 100%;
         border-collapse: collapse;
@@ -132,36 +129,9 @@
                 <div class="container-box">
                     <h5>Service Categories Distribution Table</h5>
                     <ul class="list-group">
-                        {% for category, percentage in service_category_distribution.items() %}
+                        {% for category, count in service_category_distribution.items() %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             {{ category }}
-                            <span class="badge badge-primary badge-pill">{{ percentage }}%</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- Service Requests by Month -->
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="container-box">
-                    <h5>Service Requests by Month</h5>
-                    {% if charts['requests_by_month'] %}
-                        <img src="{{ charts['requests_by_month'] }}" alt="Service Requests by Month" style="width: 100%; height: auto;">
-                    {% else %}
-                        <p>No data available.</p>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="container-box">
-                    <h5>Service Requests by Month Table</h5>
-                    <ul class="list-group">
-                        {% for month, count in service_requests_by_month.items() %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ month }}
                             <span class="badge badge-primary badge-pill">{{ count }}</span>
                         </li>
                         {% endfor %}
@@ -169,7 +139,32 @@
                 </div>
             </div>
         </div>
-
+             <!-- Service Requests by Month -->
+             <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="container-box">
+                        <h5>Service Requests by Month</h5>
+                        {% if charts['requests_by_month'] %}
+                            <img src="{{ charts['requests_by_month'] }}" alt="Service Requests by Month" style="width: 100%; height: auto;">
+                        {% else %}
+                            <p>No data available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="container-box">
+                        <h5>Service Requests by Month Table</h5>
+                        <ul class="list-group">
+                            {% for month, count in service_requests_by_month.items() %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ month }}
+                                <span class="badge badge-primary badge-pill">{{ count }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
         <!-- Professional Status Distribution -->
         <div class="row mt-4">
             <div class="col-md-6">
@@ -186,10 +181,10 @@
                 <div class="container-box">
                     <h5>Professional Status Distribution Table</h5>
                     <ul class="list-group">
-                        {% for status, percentage in professional_status_distribution.items() %}
+                        {% for status, count in professional_status_distribution.items() %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             {{ status }}
-                            <span class="badge badge-primary badge-pill">{{ percentage }}%</span>
+                            <span class="badge badge-primary badge-pill">{{ count }}</span>
                         </li>
                         {% endfor %}
                     </ul>
@@ -213,11 +208,10 @@
                 <div class="container-box">
                     <h5>Service Request Status Table</h5>
                     <ul class="list-group">
-                        {% for status, percentage in service_request_status_distribution.items() %}
+                        {% for status, count in service_request_status_distribution.items() %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             {{ status }}
-                            <span class="badge badge-primary badge-pill">{{ percentage }}%</span>
-                        </li>
+                            <span class="badge badge-primary badge-pill">{{ count }}</span>
                         {% endfor %}
                     </ul>
                 </div>

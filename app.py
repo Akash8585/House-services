@@ -14,7 +14,7 @@ import base64
 from collections import defaultdict
 from sqlalchemy import extract
 from datetime import datetime
-
+import numpy as np
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
@@ -131,25 +131,31 @@ def admin_dashboard():
     professionals = Professional.query.all()
     customers = Customer.query.all()
     services = Service.query.all()
+
+    # Group service requests
     requests = Request.query.all()
-    all_users = User.query.all()
+    grouped_requests = {
+        "requested": [r for r in requests if r.status == "requested"],
+        "closed": [r for r in requests if r.status == "closed"],
+        "accepted": [
+            r for r in requests if r.status in {"accepted", "in progress", "review pending", "pending", "assigned"}
+        ],
+    }
 
     # Count statistics
     total_professionals = len(professionals)
     total_customers = len(customers)
     total_requests = len(requests)
-    pending_approvals = len([p for p in professionals if p.status == 'pending'])
+    pending_approvals = len([p for p in professionals if p.status == "pending"])
 
-    
     professional = None
 
-
     # Handle service addition via form submission
-    if request.method == 'POST':
-        service_name = request.form.get('service_name')
-        service_description = request.form.get('description')
-        price = request.form.get('base_price')
-        duration = request.form.get('duration')
+    if request.method == "POST":
+        service_name = request.form.get("service_name")
+        service_description = request.form.get("description")
+        price = request.form.get("base_price")
+        duration = request.form.get("duration")
 
         if service_name and price and duration:
             new_service = Service(
@@ -157,28 +163,29 @@ def admin_dashboard():
                 service_name=service_name,
                 service_description=service_description,
                 price=float(price),
-                duration=duration
+                duration=duration,
             )
             db.session.add(new_service)
             db.session.commit()
-            flash('New service added successfully!', 'success')
-            return redirect(url_for('admin_dashboard'))  # Refresh the page
+            flash("New service added successfully!", "success")
+            return redirect(url_for("admin_dashboard"))  # Refresh the page
 
-        flash('Please fill out all required fields.', 'danger')
+        flash("Please fill out all required fields.", "danger")
 
     return render_template(
-        'admin/admin_dashboard.html',
+        "admin/admin_dashboard.html",
         professionals=professionals,
         customers=customers,
         services=services,
         requests=requests,
+        grouped_requests=grouped_requests,
         total_professionals=total_professionals,
         total_customers=total_customers,
         total_requests=total_requests,
         pending_approvals=pending_approvals,
-        professional=professional
-        
+        professional=professional,
     )
+
 
 @app.route('/delete_service/<id>', methods=['POST'])
 def delete_service(id):
@@ -427,7 +434,9 @@ def admin_search():
                 Request.id.contains(search_query) |
                 Request.customer.has(Customer.name.contains(search_query))
             )
-        if status:
+        if status == 'accepted':
+            query = query.filter(Request.status.notin_(['requested', 'closed']))
+        elif status:
             query = query.filter_by(status=status)
         filtered_data = query.all()
 
@@ -474,24 +483,40 @@ def admin_search():
 
 
 
-# Helper function to generate charts
-import numpy as np
+
 
 def generate_chart(data, chart_type, title, filename):
+    """
+    Generate a chart using matplotlib, save it as an image, and return the file path.
+
+    Args:
+        data (dict): Data for the chart, with keys as labels and values as numbers.
+        chart_type (str): The type of chart to generate ('pie', 'bar').
+        title (str): The title of the chart.
+        filename (str): The name of the output file to save in 'static/charts'.
+
+    Returns:
+        str: File path of the saved chart image.
+    """
+    # Ensure the charts directory exists
+    charts_dir = "static/charts"
+    os.makedirs(charts_dir, exist_ok=True)
+
+    # Handle the case where data is empty or all values are zero
     if not data or all(value == 0 for value in data.values()):
-        # Create an empty image if data is empty or all values are zero
         plt.figure(figsize=(6, 4))
         plt.text(0.5, 0.5, "No data available", ha='center', va='center', fontsize=14, alpha=0.6)
         plt.title(title)
-        plt.axis('off')
-        filepath = os.path.join("static/charts", filename)
+        plt.axis('off')  # Hide axes
+        filepath = os.path.join(charts_dir, filename)
         plt.savefig(filepath, bbox_inches="tight")
         plt.close()
-        return f"static/charts/{filename}"
+        return filepath
 
-    # Filter out NaN or zero values
+    # Filter out invalid data (e.g., NaN or zero values)
     valid_data = {k: v for k, v in data.items() if not np.isnan(v) and v > 0}
 
+    # Generate the chart
     plt.figure(figsize=(6, 4))
     if chart_type == "pie":
         plt.pie(valid_data.values(), labels=valid_data.keys(), autopct="%1.1f%%", startangle=140)
@@ -499,19 +524,22 @@ def generate_chart(data, chart_type, title, filename):
     elif chart_type == "bar":
         plt.bar(valid_data.keys(), valid_data.values(), color="skyblue")
         plt.title(title)
-        plt.xticks(rotation=45, ha="right")
+        plt.xticks(rotation=45, ha="right")  # Rotate x-axis labels for better readability
     else:
         raise ValueError(f"Unsupported chart type: {chart_type}")
 
-    filepath = os.path.join("static/charts", filename)
+    # Save the chart as an image
+    filepath = os.path.join(charts_dir, filename)
     plt.savefig(filepath, bbox_inches="tight")
     plt.close()
-    return f"static/charts/{filename}"
+
+    return filepath
+
 
 
 @app.route("/admin_summary")
 def admin_summary():
-    os.makedirs("static/charts", exist_ok=True)
+    os.makedirs("static/charts", exist_ok=True)  # Ensure charts directory exists
 
     # Query data
     total_professionals = Professional.query.count()
@@ -520,8 +548,9 @@ def admin_summary():
     pending_approvals = Professional.query.filter_by(status="pending").count()
 
     # Service category distribution
+    services = Service.query.all()
     service_category_distribution = {
-        service.service_name: len(service.requests) for service in Service.query.all()
+        service.service_name: Request.query.filter_by(service_id=service.id).count() for service in services
     }
     service_category_chart = generate_chart(
         service_category_distribution, "pie", "Service Categories Distribution", "service_category.png"
@@ -552,9 +581,11 @@ def admin_summary():
 
     # Service request status distribution
     service_request_status_distribution = {
-        "Pending": Request.query.filter_by(status="Pending").count(),
-        "In Progress": Request.query.filter_by(status="In Progress").count(),
-        "Completed": Request.query.filter_by(status="Completed").count(),
+        "requested": Request.query.filter_by(status="requested").count(),
+        "accepted": Request.query.filter(
+            Request.status.in_(["accepted", "in progress", "review pending", "pending", "assigned"])
+        ).count(),
+        "closed": Request.query.filter_by(status="closed").count(),
     }
     service_request_status_chart = generate_chart(
         service_request_status_distribution, "pie", "Service Request Status", "service_request_status.png"
@@ -586,6 +617,10 @@ def admin_summary():
 
 
 
+
+
+
+
 @app.route('/professional_dashboard')
 def professional_dashboard():
     # Query data for the professional dashboard
@@ -604,6 +639,21 @@ def professional_dashboard():
         accepted_services=accepted_services,
         closed_services=closed_services
     )
+
+@app.route('/professional_search')
+def professional_search():
+    # Implement the logic for the search page
+    return render_template('professional/professional_search.html')
+
+@app.route('/professional_summary')
+def professional_summary():
+    # Implement the logic for the search page
+    return render_template('professional/professional_summary.html')
+
+@app.route('/professional_profile')
+def professional_profile():
+    # Implement the logic for the search page
+    return render_template('professional/professional_profile.html')
 
 @app.route('/customer_dashboard')
 def customer_dashboard():

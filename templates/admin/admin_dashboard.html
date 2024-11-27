@@ -360,10 +360,12 @@ body {
                             <td>{{ request.professional.name if request.professional else 'None' }}</td>
                             <td>{{ request.request_date }}</td>
                             <td>
-                                {% if not request.professional %}
-                                <span class="badge badge-status badge-pending">Pending</span>
+                                {% if request.status == 'closed' %}
+                                <span class="badge badge-status badge-closed">Closed</span>
+                                {% elif request.status == 'requested' %}
+                                <span class="badge badge-status badge-pending">Requested</span>
                                 {% else %}
-                                <span class="badge badge-status badge-accepted">{{ request.status }}</span>
+                                <span class="badge badge-status badge-accepted">Accepted</span>
                                 {% endif %}
                             </td>
                         </tr>
