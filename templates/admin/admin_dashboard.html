@@ -242,11 +242,10 @@ body {
                             <td>
                                 <form method="GET" action="{{ url_for('show_professional_details') }}">
                                     <input type="hidden" name="id" value="{{ professional.id }}">
+                                    <input type="hidden" name="source" value="admin_dashboard"> 
                                     <button type="submit" class="btn btn-link">{{ professional.id }}</button>
                                 </form>
                             </td>
-                            
-                            
                             <td>{{ professional.name }}</td>
                             <td>{{ professional.experience }}</td>
                             <td>{{ professional.service_type }}</td>
@@ -261,7 +260,7 @@ body {
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger btn-sm">Reject</button>
 </form>
-<form method="POST" action="{{ url_for('block_user', id=professional.id) }}" style="display:inline;">
+<form method="POST" action="{{ url_for('block_professional', id=professional.id) }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-warning btn-sm">Block</button>
 </form>
@@ -305,6 +304,7 @@ body {
                             <td>
                                 <form method="GET" action="{{ url_for('show_customer_details') }}">
                                     <input type="hidden" name="id" value="{{ customer.id }}">
+                                    <input type="hidden" name="source" value="admin_dashboard"> 
                                     <button type="submit" class="btn btn-link">{{ customer.id }}</button>
                                 </form>
                             </td>
@@ -349,7 +349,13 @@ body {
                     <tbody>
                         {% for request in requests %}
                         <tr>
-                            <td>{{ request.id }}</td>
+                            <td>
+                                <form method="GET" action="{{ url_for('show_service_request_details') }}">
+                                    <input type="hidden" name="id" value="{{ request.id }}">
+                                    <input type="hidden" name="source" value="admin_dashboard">
+                                    <button type="submit" class="btn btn-link">{{ request.id }}</button>
+                                </form>
+                            </td>
                             <td>{{ request.customer.name }}</td>
                             <td>{{ request.professional.name if request.professional else 'None' }}</td>
                             <td>{{ request.request_date }}</td>
@@ -385,13 +391,24 @@ body {
             $('#customerDetailsModal').modal('show');
         });
     </script>
-{% endif %}
+    {% endif %}
+    {% if service_request %}
+    {% include 'admin/details.html' %}
+    <script>
+        $(document).ready(function () {
+            $('#serviceRequestModal').modal('show');  <!-- Correct modal ID -->
+        });
+    </script>
+    {% endif %}
 
 
 
     {% endblock %}
 
 
-
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.4/dist/umd/popper.min.js" integrity="sha384-VQ4mxw91lBPJcULU9SgRNSUxi8OrqxUqTo8JmjydT9IO2s+06h4sJ7GKtuLvRBsM" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgEPBLwYSvhEpfAvk1cY0X54ZT1NsEq40euJOfz5CldYQ39w1sw" crossorigin="anonymous"></script>
+    
 </body>
 </html>

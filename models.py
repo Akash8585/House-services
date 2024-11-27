@@ -28,10 +28,13 @@ class User(db.Model):
     role = db.Column(db.String(50), nullable=False)  # Customer or Professional
 
     __mapper_args__ = {
-        'polymorphic_identity': 'user',
-        'polymorphic_on': role
+    'polymorphic_identity': 'user',
+    'polymorphic_on': role,  # This allows loading unknown roles without crashing
     }
 
+    def __init__(self, *args, **kwargs):
+           super().__init__(*args, **kwargs)
+           print(f"User created/modified: ID={self.id}, Role={self.role}")
 
     # Password Hashing and Verification
     @property
@@ -138,7 +141,7 @@ class Request(db.Model):
     customer = relationship('Customer', backref='requests')
     professional = relationship('Professional', backref='requests')
     service = relationship('Service')  # Remove backref here)
-
+    
 
 # Feedback Model
 class Feedback(db.Model):
@@ -163,3 +166,6 @@ class Notification(db.Model):
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
+
+
+

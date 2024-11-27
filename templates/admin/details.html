@@ -16,7 +16,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{{ url_for('admin_dashboard') }}">
+                    <form method="POST" action="{{ url_for(source_page) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group">
                             <label for="proId">Pro. ID</label>
@@ -77,7 +77,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{{ url_for('customer_dashboard') }}">
+                    <form method="POST" action="{{ url_for(source_page) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group">
                             <label for="cusId">Cus. ID</label>
@@ -120,6 +120,75 @@
         </div>
     </div>
     
+    <div class="modal fade" id="serviceRequestModal" tabindex="-1" aria-labelledby="serviceRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="serviceRequestModalLabel">Service Request Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for(source_page) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
+                        <div class="form-group">
+                            <label for="serReqId">SerReq.ID</label>
+                            <input type="text" class="form-control" id="serReqId" name="ser_req_id" value="{{ service_request.id }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestedBy">Requested By</label>
+                            <input type="text" class="form-control" id="requestedBy" name="requested_by" 
+                                   value="{{ customer_name }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="assignedProfessional">Assigned Professional</label>
+                            <input type="text" class="form-control" id="assignedProfessional" name="assigned_professional" 
+                                   value="{{ professional_name }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="basePrice">Base Price</label>
+                            <input type="text" class="form-control" id="basePrice" name="base_price" 
+                                   value="{{ service_request.service.price if service_request.service else 'N/A' }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="duration">Duration</label>
+                            <input type="text" class="form-control" id="duration" name="duration" 
+                                   value="{{ service_request.service.duration if service_request.service else 'N/A' }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dateOfRequest">Date of Request</label>
+                            <input type="text" class="form-control" id="dateOfRequest" name="date_of_request" 
+                                   value="{{ service_request.request_date if service_request.request_date else 'N/A' }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="rate">Rate</label>
+                            <input type="text" class="form-control" id="rate" name="rate" 
+                                   value="{{ service_request.rate if service_request.rate else 'N/A' }}" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <input type="text" class="form-control" id="status" name="status" 
+                                   value="{{ service_request.status if service_request.status else 'N/A' }}" readonly>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+
 </body>
 </html>

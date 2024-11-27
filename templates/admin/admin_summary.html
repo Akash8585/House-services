@@ -1,23 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Search</title>
+    <title>Admin Summary</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    {% extends "base.html" %}
 
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f7f8fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    .summary-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .container-box {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .stats-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .stat-box {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        flex: 1;
+        margin: 10px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .table-container {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table th {
+        background-color: #007bff;
+        color: white;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .table td {
+        text-align: center;
+    }
+</style>
+
+<body>
+    {% extends 'base.html' %}
     {% block navbar %}
-      {% include "navbars/admin_navbar.html" %}
+        {% include 'navbars/admin_navbar.html' %}
     {% endblock %}
 
     {% block content %}
-    <div class="container mt-4">
+    <div class="container mt-5">
         <h1>Admin Summary</h1>
-        <!-- Add search functionality here -->
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <h4>Professionals</h4>
+                <p>{{ total_professionals }}</p>
+            </div>
+            <div class="stat-box">
+                <h4>Customers</h4>
+                <p>{{ total_customers }}</p>
+            </div>
+            <div class="stat-box">
+                <h4>Pending Approvals</h4>
+                <p>{{ pending_approvals }}</p>
+            </div>
+            <div class="stat-box">
+                <h4>Service Requests</h4>
+                <p>{{ total_requests }}</p>
+            </div>
+        </div>
+
+        <!-- Service Categories Distribution -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Categories Distribution</h5>
+                    {% if charts['service_category'] %}
+                        <img src="{{ charts['service_category'] }}" alt="Service Categories Distribution" style="width: 100%; height: auto;">
+                    {% else %}
+                        <p>No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Categories Distribution Table</h5>
+                    <ul class="list-group">
+                        {% for category, percentage in service_category_distribution.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ category }}
+                            <span class="badge badge-primary badge-pill">{{ percentage }}%</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Requests by Month -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Requests by Month</h5>
+                    {% if charts['requests_by_month'] %}
+                        <img src="{{ charts['requests_by_month'] }}" alt="Service Requests by Month" style="width: 100%; height: auto;">
+                    {% else %}
+                        <p>No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Requests by Month Table</h5>
+                    <ul class="list-group">
+                        {% for month, count in service_requests_by_month.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ month }}
+                            <span class="badge badge-primary badge-pill">{{ count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Status Distribution -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Professional Status Distribution</h5>
+                    {% if charts['professional_status'] %}
+                        <img src="{{ charts['professional_status'] }}" alt="Professional Status Distribution" style="width: 100%; height: auto;">
+                    {% else %}
+                        <p>No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Professional Status Distribution Table</h5>
+                    <ul class="list-group">
+                        {% for status, percentage in professional_status_distribution.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ status }}
+                            <span class="badge badge-primary badge-pill">{{ percentage }}%</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Request Status -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Request Status</h5>
+                    {% if charts['service_request_status'] %}
+                        <img src="{{ charts['service_request_status'] }}" alt="Service Request Status" style="width: 100%; height: auto;">
+                    {% else %}
+                        <p>No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Request Status Table</h5>
+                    <ul class="list-group">
+                        {% for status, percentage in service_request_status_distribution.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ status }}
+                            <span class="badge badge-primary badge-pill">{{ percentage }}%</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
     {% endblock %}
 </body>
+
 </html>

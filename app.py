@@ -6,6 +6,15 @@ from forms import CustomerSignupForm, LoginForm, ProfessionalSignupForm
 import os
 from models import generate_unique_id
 from flask_wtf.csrf import CSRFProtect
+import matplotlib
+matplotlib.use('Agg') 
+import matplotlib.pyplot as plt
+import io
+import base64
+from collections import defaultdict
+from sqlalchemy import extract
+from datetime import datetime
+
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
@@ -125,9 +134,6 @@ def admin_dashboard():
     requests = Request.query.all()
     all_users = User.query.all()
 
-    for user in all_users:
-             print(f"User ID: {user.id}, Role: {user.role}")
-
     # Count statistics
     total_professionals = len(professionals)
     total_customers = len(customers)
@@ -189,7 +195,7 @@ def delete_service(id):
     else:
         flash('Service not found.', 'danger')
 
-    return redirect(url_for('admin_dashboard'))  # Redirect back to the admin dashboard
+    return redirect(request.referrer or url_for('admin_dashboard'))  # Redirect back to the admin dashboard
   # Redirect back to the admin dashboard
   # Redirect back to the admin dashboard
 @app.route('/edit_service', methods=['POST'])
@@ -212,7 +218,7 @@ def edit_service():
     else:
         flash('Service not found.', 'danger')
 
-    return redirect(url_for('admin_dashboard'))
+    return redirect(request.referrer or url_for('admin_dashboard'))
 
 
 
@@ -224,7 +230,8 @@ def approve_professional(id):
         professional.status = 'approved'
         db.session.commit()
         flash(f'Professional {professional.name} has been approved.', 'success')
-    return redirect(url_for('admin_dashboard'))
+    return redirect(request.referrer or url_for('admin_dashboard'))  # Redirect back to the referring page (search)
+
 @app.route('/reject_professional/<id>', methods=['POST'])
 def reject_professional(id):
     professional = Professional.query.get(id)
@@ -232,125 +239,371 @@ def reject_professional(id):
         professional.status = 'rejected'
         db.session.commit()
         flash(f'Professional {professional.name} has been rejected.', 'danger')
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/block_customer/<id>', methods=['POST'])
-def block_customer(id):
-    customer = Customer.query.get(id)
-    if customer:
-        customer.status = 'blocked'
-        db.session.commit()
-        flash(f'Customer {customer.name} has been blocked.', 'warning')
-    else:
-        flash('Customer not found!', 'danger')
-    return redirect(url_for('admin_dashboard'))
-    # Implement the logic for the admin search page
+    return redirect(request.referrer or url_for('admin_dashboard'))
+@app.route('/block_professional/<id>', methods=['POST'])
+def block_professional(id):
+       professional = Professional.query.get(id)
+       if professional:
+           print(f"Blocking professional: ID={professional.id}, Current Status={professional.status}")
+           professional.status = 'blocked'
+           db.session.commit()
+           print(f"Professional blocked: ID={professional.id}, New Status={professional.status}")
+           flash(f'Professional {professional.name} has been blocked.', 'warning')
+       else:
+           flash('Professional not found!', 'danger')
+       return redirect(request.referrer or url_for('admin_dashboard'))
 @app.route('/unblock_user/<id>', methods=['POST'])
 def unblock_user(id):
     professional = Professional.query.get(id)
     if professional:
         professional.status = 'approved'  # or 'active', depending on your logic
         db.session.commit()
-        flash('User unblocked successfully!', 'success')
-    else:
-        flash('User not found.', 'danger')
-    return redirect(url_for('admin_dashboard'))
-@app.route('/block_professional/<id>', methods=['POST'])
-def block_professional(id):
-    professional = Professional.query.get(id)
-    if professional:
-        professional.status = 'blocked'
-        db.session.commit()
-        flash(f'Professional {professional.name} has been blocked.', 'warning')
+        flash(f'Professional {professional.name} has been unblocked.', 'success')
     else:
         flash('Professional not found!', 'danger')
-    return redirect(url_for('admin_dashboard'))
+    return redirect(request.referrer or url_for('admin_dashboard'))
 
-@app.route('/unblock_customer', methods=['POST'])
-def unblock_customer():
-    customer_id = request.form.get('id')
-    customer = Customer.query.get(customer_id)
-    
-    if customer:
-        customer.status = 'active'
-        db.session.commit()
-        flash('Customer unblocked successfully!', 'success')
-    else:
-        flash('Customer not found!', 'danger')
-    
-    return redirect(url_for('admin_dashboard'))
+@app.route('/block_customer/<id>', methods=['POST'])
+def block_customer(id):
+       customer = Customer.query.get(id)
+       if customer:
+           customer.status = 'blocked'
+           db.session.commit()
+           flash(f'Customer {customer.name} has been blocked.', 'warning')
+       else:
+           flash('Customer not found!', 'danger')
+       return redirect(request.referrer or url_for('admin_dashboard'))  
+
+@app.route('/unblock_customer/<id>', methods=['POST'])
+def unblock_customer(id):
+       customer = Customer.query.get(id)
+       if customer:
+           customer.status = 'active'  # or whatever status indicates unblocked
+           db.session.commit()
+           flash(f'Customer {customer.name} has been unblocked.', 'success')
+       else:
+           flash('Customer not found!', 'danger')
+       return redirect(request.referrer or url_for('admin_dashboard'))
+
+
 
 @app.route('/show_professional_details', methods=['GET'])
 def show_professional_details():
-       pro_id = request.args.get('id')
-       professional = Professional.query.get(pro_id)
+    pro_id = request.args.get('id')
+    source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
+    professional = Professional.query.get(pro_id)
 
-       if not professional:
-           flash('Professional not found!', 'danger')
-           return redirect(url_for('admin_dashboard'))
+    if not professional:
+        flash('Professional not found!', 'danger')
+        return redirect(url_for(source_page))  # Redirect back to the source page
 
-       professionals = Professional.query.all()
-       customers = Customer.query.all()
-       services = Service.query.all()
-       requests = Request.query.all()
+    professionals = Professional.query.all()
+    customers = Customer.query.all()
+    services = Service.query.all()
+    requests = Request.query.all()
 
-       return render_template(
-           'admin/admin_dashboard.html',
-           professionals=professionals,
-           customers=customers,
-           services=services,
-           requests=requests,
-           total_professionals=len(professionals),
-           total_customers=len(customers),
-           total_requests=len(requests),
-           pending_approvals=len([p for p in professionals if p.status == 'pending']),
-           professional=professional,
-           customer=None  # Ensure customer is defined
-       )
+    entity = 'professionals'
+
+    return render_template(
+        f'admin/{source_page}.html',  # Render the correct page
+        professionals=professionals,
+        customers=customers,
+        services=services,
+        requests=requests,
+        total_professionals=len(professionals),
+        total_customers=len(customers),
+        total_requests=len(requests),
+        pending_approvals=len([p for p in professionals if p.status == 'pending']),
+        professional=professional,
+        customer=None,
+        service_request=None,
+        source_page=source_page,
+        entity=entity,
+        status=status,
+        search_query=search_query,
+        filtered_data=filtered_data,
+        modal_item=modal_item  # Pass source_page to the template
+    )
+
+
+
 
 @app.route('/show_customer_details', methods=['GET'])
 def show_customer_details():
-       customer_id = request.args.get('id')
-       customer = Customer.query.get(customer_id)
-       
-       if not customer:
-           flash('Customer not found', 'error')
-           return redirect(url_for('admin_dashboard'))
+    customer_id = request.args.get('id')
+    source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
+    customer = Customer.query.get(customer_id)
 
-       professionals = Professional.query.all()
-       customers = Customer.query.all()
-       services = Service.query.all()
-       requests = Request.query.all()
+    if not customer:
+        flash('Customer not found', 'error')
+        return redirect(url_for(source_page))  # Redirect back to the source page
 
-       return render_template(
-           'admin/admin_dashboard.html',
-           professionals=professionals,
-           customers=customers,
-           services=services,
-           requests=requests,
-           total_professionals=len(professionals),
-           total_customers=len(customers),
-           total_requests=len(requests),
-           pending_approvals=len([p for p in professionals if p.status == 'pending']),
-           customer=customer,
-           professional=None  # Ensure professional is defined
-       )
+    professionals = Professional.query.all()
+    customers = Customer.query.all()
+    services = Service.query.all()
+    requests = Request.query.all()
+
+    return render_template(
+        f'admin/{source_page}.html',  # Render the correct page
+        professionals=professionals,
+        customers=customers,
+        services=services,
+        requests=requests,
+        total_professionals=len(professionals),
+        total_customers=len(customers),
+        total_requests=len(requests),
+        pending_approvals=len([p for p in professionals if p.status == 'pending']),
+        customer=customer,
+        professional=None,
+        service_request=None,
+        source_page=source_page
+    )
+
+
+@app.route('/show_service_request_details', methods=['GET'])
+def show_service_request_details():
+    req_id = request.args.get('id')
+    source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
+    service_request = Request.query.get(req_id)
+
+    if not service_request:
+        flash('Service request not found!', 'danger')
+        return redirect(url_for(source_page))  # Redirect back to the source page
+
+    # Explicitly handle missing relationships
+    customer_name = service_request.customer.name if service_request.customer else "Unknown"
+    professional_name = service_request.professional.name if service_request.professional else "None"
+    service_name = service_request.service.service_name if service_request.service else "N/A"
+
+    professionals = Professional.query.all()
+    customers = Customer.query.all()
+    services = Service.query.all()
+    requests = Request.query.all()
+
+    return render_template(
+        f'admin/{source_page}.html',  # Render the correct page
+        professionals=professionals,
+        customers=customers,
+        services=services,
+        requests=requests,
+        total_professionals=len(professionals),
+        total_customers=len(customers),
+        total_requests=len(requests),
+        pending_approvals=len([p for p in professionals if p.status == 'pending']),
+        service_request=service_request,
+        customer_name=customer_name,
+        professional_name=professional_name,
+        service_name=service_name,
+        professional=None,
+        customer=None,
+        source_page=source_page
+    )
 
 
 
-@app.route('/admin_search')
+
+@app.route('/admin_search', methods=['GET'])
 def admin_search():
-    # Implement the logic for the admin search page
-    return render_template('admin/admin_search.html')
+    entity = request.args.get('entity', 'services')  # Default to services
+    status = request.args.get('status', '')
+    search_query = request.args.get('search_query', '')
+    id_filter = request.args.get('id', None)
 
-@app.route('/admin_summary')
+    filtered_data = []
+
+    if entity == 'services':
+        query = Service.query
+        if search_query:
+            query = query.filter(
+                Service.service_name.contains(search_query) |
+                Service.service_description.contains(search_query)
+            )
+        filtered_data = query.all()
+
+    elif entity == 'service_requests':
+        query = Request.query
+        if search_query:
+            query = query.filter(
+                Request.id.contains(search_query) |
+                Request.customer.has(Customer.name.contains(search_query))
+            )
+        if status:
+            query = query.filter_by(status=status)
+        filtered_data = query.all()
+
+    elif entity == 'professionals':
+        query = Professional.query
+        if search_query:
+            query = query.filter(
+                Professional.name.contains(search_query) |
+                Professional.service_type.contains(search_query)
+            )
+        if status:
+            query = query.filter_by(status=status)
+        filtered_data = query.all()
+
+    elif entity == 'customers':
+        query = Customer.query
+        if search_query:
+            query = query.filter(
+                Customer.name.contains(search_query) |
+                Customer.address.contains(search_query)
+            )
+        if status:
+            query = query.filter_by(status=status)
+        filtered_data = query.all()
+
+    # If viewing a specific ID (to show modal)
+    modal_item = None
+    if id_filter:
+        if entity == 'service_requests':
+            modal_item = Request.query.get(id_filter)
+        elif entity == 'professionals':
+            modal_item = Professional.query.get(id_filter)
+        elif entity == 'customers':
+            modal_item = Customer.query.get(id_filter)
+
+    return render_template(
+        'admin/admin_search.html',
+        entity=entity,
+        status=status,
+        search_query=search_query,
+        filtered_data=filtered_data,
+        modal_item=modal_item
+    )
+
+
+
+# Helper function to generate charts
+import numpy as np
+
+def generate_chart(data, chart_type, title, filename):
+    if not data or all(value == 0 for value in data.values()):
+        # Create an empty image if data is empty or all values are zero
+        plt.figure(figsize=(6, 4))
+        plt.text(0.5, 0.5, "No data available", ha='center', va='center', fontsize=14, alpha=0.6)
+        plt.title(title)
+        plt.axis('off')
+        filepath = os.path.join("static/charts", filename)
+        plt.savefig(filepath, bbox_inches="tight")
+        plt.close()
+        return f"static/charts/{filename}"
+
+    # Filter out NaN or zero values
+    valid_data = {k: v for k, v in data.items() if not np.isnan(v) and v > 0}
+
+    plt.figure(figsize=(6, 4))
+    if chart_type == "pie":
+        plt.pie(valid_data.values(), labels=valid_data.keys(), autopct="%1.1f%%", startangle=140)
+        plt.title(title)
+    elif chart_type == "bar":
+        plt.bar(valid_data.keys(), valid_data.values(), color="skyblue")
+        plt.title(title)
+        plt.xticks(rotation=45, ha="right")
+    else:
+        raise ValueError(f"Unsupported chart type: {chart_type}")
+
+    filepath = os.path.join("static/charts", filename)
+    plt.savefig(filepath, bbox_inches="tight")
+    plt.close()
+    return f"static/charts/{filename}"
+
+
+@app.route("/admin_summary")
 def admin_summary():
-    # Implement the logic for the admin search page
-    return render_template('admin/admin_summary.html')
+    os.makedirs("static/charts", exist_ok=True)
+
+    # Query data
+    total_professionals = Professional.query.count()
+    total_customers = Customer.query.count()
+    total_requests = Request.query.count()
+    pending_approvals = Professional.query.filter_by(status="pending").count()
+
+    # Service category distribution
+    service_category_distribution = {
+        service.service_name: len(service.requests) for service in Service.query.all()
+    }
+    service_category_chart = generate_chart(
+        service_category_distribution, "pie", "Service Categories Distribution", "service_category.png"
+    )
+
+    # Service requests by month
+    months_order = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ]
+    service_requests_by_month = {
+        month: Request.query.filter(extract("month", Request.request_date) == idx + 1).count()
+        for idx, month in enumerate(months_order)
+    }
+    requests_by_month_chart = generate_chart(
+        service_requests_by_month, "bar", "Service Requests by Month", "requests_by_month.png"
+    )
+
+    # Professional status distribution
+    professional_status_distribution = {
+        "Approved": Professional.query.filter_by(status="approved").count(),
+        "Pending": Professional.query.filter_by(status="pending").count(),
+        "Blocked": Professional.query.filter_by(status="blocked").count(),
+    }
+    professional_status_chart = generate_chart(
+        professional_status_distribution, "pie", "Professional Status Distribution", "professional_status.png"
+    )
+
+    # Service request status distribution
+    service_request_status_distribution = {
+        "Pending": Request.query.filter_by(status="Pending").count(),
+        "In Progress": Request.query.filter_by(status="In Progress").count(),
+        "Completed": Request.query.filter_by(status="Completed").count(),
+    }
+    service_request_status_chart = generate_chart(
+        service_request_status_distribution, "pie", "Service Request Status", "service_request_status.png"
+    )
+
+    return render_template(
+        "admin/admin_summary.html",
+        total_professionals=total_professionals,
+        total_customers=total_customers,
+        pending_approvals=pending_approvals,
+        total_requests=total_requests,
+        service_category_distribution=service_category_distribution,
+        service_requests_by_month=service_requests_by_month,
+        professional_status_distribution=professional_status_distribution,
+        service_request_status_distribution=service_request_status_distribution,
+        charts={
+            "service_category": service_category_chart,
+            "requests_by_month": requests_by_month_chart,
+            "professional_status": professional_status_chart,
+            "service_request_status": service_request_status_chart,
+        },
+    )
+
+
+
+
+
+
+
+
 
 @app.route('/professional_dashboard')
 def professional_dashboard():
-    return render_template('professional/professional_dashboard.html')
+    # Query data for the professional dashboard
+    professional_id = session.get('user_id')  # Assuming the professional's ID is stored in the session
+    professional = Professional.query.get(professional_id)
+    
+    # Fetch service requests related to the professional
+    requested_services = Request.query.filter_by(professional_id=professional_id, status='pending').all()
+    accepted_services = Request.query.filter_by(professional_id=professional_id, status='in progress').all()
+    closed_services = Request.query.filter_by(professional_id=professional_id, status='closed').all()
+
+    return render_template(
+        'professional/professional_dashboard.html',
+        professional=professional,
+        requested_services=requested_services,
+        accepted_services=accepted_services,
+        closed_services=closed_services
+    )
 
 @app.route('/customer_dashboard')
 def customer_dashboard():
