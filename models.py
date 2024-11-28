@@ -138,6 +138,7 @@ class Request(db.Model):
     request_date = db.Column(db.DateTime, nullable=False)
     completion_date = db.Column(db.DateTime, nullable=True)
     rejected_by = db.Column(db.JSON, default=list)  
+    fee = db.Column(db.Float, nullable=True)
 
     # Define relationships
     professional = db.relationship('Professional', backref='requests')
@@ -154,6 +155,11 @@ class Feedback(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comments = db.Column(db.Text, nullable=True)
     feedback_date = db.Column(db.DateTime, nullable=False)
+      # Add this line
+
+    customer = db.relationship("Customer", backref="feedbacks")
+    professional = db.relationship("Professional", backref="feedbacks")
+    request = db.relationship('Request', backref='feedbacks')  # Add this line
 
 
 # Notification Model

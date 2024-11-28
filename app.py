@@ -300,6 +300,10 @@ def show_professional_details():
     pro_id = request.args.get('id')
     source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
     professional = Professional.query.get(pro_id)
+    status = request.args.get('status', 'default_status')
+    search_query = request.args.get('search_query', '')
+    filtered_data = [] 
+    modal_item = None 
 
     if not professional:
         flash('Professional not found!', 'danger')
@@ -671,20 +675,173 @@ def professional_dashboard():
 
 
 
-@app.route('/professional_search')
+@app.route('/professional_search', methods=['GET'])
 def professional_search():
-    # Implement the logic for the search page
-    return render_template('professional/professional_search.html')
+    # Get the logged-in professional ID
+    professional_id = session.get('user_id')
+    professional = Professional.query.get(professional_id)
 
-@app.route('/professional_summary')
+    # Retrieve filters from request
+    status = request.args.get('status', '')
+    search_query = request.args.get('search_query', '')
+
+    # Query for service requests assigned to the logged-in professional
+    query = Request.query.filter_by(professional_id=professional_id)
+
+    if status:
+        query = query.filter_by(status=status)  # Filter by status if provided
+
+    if search_query:
+        query = query.filter(
+            Request.customer.has(Customer.name.contains(search_query)) |
+            Request.service.has(Service.service_name.contains(search_query))
+        )  # Filter by customer or service name
+
+    filtered_data = query.all()
+
+    return render_template(
+        'professional/professional_search.html',
+        filtered_data=filtered_data,
+        status=status,
+        search_query=search_query,
+        professional=professional 
+    )
+
+
+
+@app.route("/professional_summary")
 def professional_summary():
-    # Implement the logic for the search page
-    return render_template('professional/professional_summary.html')
+    professional_id = session.get("user_id")  # Assuming professional's ID is stored in session
+    professional = Professional.query.get(professional_id)
 
-@app.route('/professional_profile')
+    # Statistics
+    completed_services = Request.query.filter_by(professional_id=professional_id, status="closed").count()
+    accepted_services = Request.query.filter_by(professional_id=professional_id).filter(
+        Request.status.in_(["pending", "in progress"])
+    ).count()
+    pending_requests = Request.query.filter_by(status="requested").count()
+
+    # Compute total earnings
+    total_earnings = db.session.query(db.func.sum(Service.price)).join(Request).filter(
+        Request.professional_id == professional_id,
+        Request.status == "closed"
+    ).scalar() or 0.0
+
+    # Retrieve feedbacks
+    feedbacks = Feedback.query.filter_by(professional_id=professional_id).all()
+
+    # Calculate average rating
+    average_rating = round(sum([f.rating for f in feedbacks]) / len(feedbacks), 1) if feedbacks else 0
+
+    # Monthly Service Breakdown
+    monthly_service_breakdown = {
+        month: Request.query.filter_by(professional_id=professional_id).filter(
+            extract("month", Request.request_date) == idx + 1
+        ).count()
+        for idx, month in enumerate(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+    }
+    monthly_services_chart = generate_chart(monthly_service_breakdown, "bar", "Monthly Services", "monthly_services.png")
+
+    # Rating Distribution
+    rating_distribution = {
+        star: Feedback.query.filter_by(professional_id=professional_id, rating=star).count()
+        for star in range(1, 6)
+    }
+    rating_distribution_chart = generate_chart(rating_distribution, "pie", "Rating Distribution", "rating_distribution.png")
+
+    # Customer Feedback
+    customer_feedback = Feedback.query.filter_by(professional_id=professional_id).all()
+
+    return render_template(
+        "professional/professional_summary.html",
+        professional=professional,
+        completed_services=completed_services,
+        accepted_services=accepted_services,
+        pending_requests=pending_requests,
+        total_earnings=total_earnings,
+        average_rating=average_rating,  # Ensure this is defined
+        monthly_service_breakdown=monthly_service_breakdown,
+        rating_distribution=rating_distribution,
+        customer_feedback=customer_feedback,
+        charts={
+            "monthly_services": monthly_services_chart,
+            "rating_distribution": rating_distribution_chart,
+        },
+    )
+
+
+
+@app.route('/professional_profile', methods=['GET', 'POST'])
 def professional_profile():
-    # Implement the logic for the search page
-    return render_template('professional/professional_profile.html')
+    professional_id = session.get('user_id')  # Assuming the professional's ID is stored in the session
+    professional = Professional.query.get(professional_id)
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        password = request.form.get('password')
+        service_type = request.form.get('service')
+        experience = request.form.get('experience')
+        address = request.form.get('address')
+        pincode = request.form.get('pincode')
+        phone_number = request.form.get('contact')
+
+        # Update professional details
+        professional.name = name
+        if password:
+            professional.password = password  # The setter will hash it
+        professional.service_type = service_type
+        professional.experience = int(experience)
+        professional.address = address
+        professional.pincode = pincode
+        professional.phone_number = phone_number
+
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('professional_profile'))
+
+    return render_template('professional/professional_profile.html', professional=professional)
+
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    """
+    Update the profile of the logged-in professional.
+    """
+    professional_id = session.get('user_id')  # Assuming the professional is logged in
+    professional = Professional.query.get(professional_id)
+
+    if not professional:
+        flash('Professional not found!', 'danger')
+        return redirect(url_for('professional_profile'))
+
+    # Get form data
+    name = request.form.get('name')
+    password = request.form.get('password')
+    service_type = request.form.get('service')
+    experience = request.form.get('experience')
+    address = request.form.get('address')
+    pincode = request.form.get('pincode')
+    phone_number = request.form.get('contact')
+
+    # Update professional fields
+    professional.name = name
+    if password:  # Only update password if provided
+        professional.password = password
+    professional.service_type = service_type
+    professional.experience = int(experience) if experience.isdigit() else professional.experience
+    professional.address = address
+    professional.pincode = pincode
+    professional.phone_number = phone_number
+
+    try:
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while updating the profile.', 'danger')
+        print(f"Error updating profile: {e}")
+
+    return redirect(url_for('professional_profile'))
+
 
 
 
@@ -739,6 +896,7 @@ def reject_service(id):
 def start_service(id):
     professional_id = session.get('user_id')  # Assuming professional is logged in
     service_request = Request.query.get(id)
+    source_page = request.args.get('source', 'professional_dashboard')
 
     if service_request and service_request.professional_id == professional_id and service_request.status == 'pending':
         service_request.status = 'in progress'  # Update status to "in progress"
@@ -747,12 +905,13 @@ def start_service(id):
     else:
         flash('Unable to start the service.', 'danger')
 
-    return redirect(url_for('professional_dashboard'))
+    return redirect(url_for(source_page))
 
 @app.route('/close_service/<id>', methods=['POST'])
 def close_service(id):
     professional_id = session.get('user_id')  # Assuming professional is logged in
     service_request = Request.query.get(id)
+    source_page = request.args.get('source', 'professional_dashboard')
 
     if service_request and service_request.professional_id == professional_id and service_request.status == 'in progress':
         service_request.status = 'review pending'  # Update status to "review pending"
@@ -762,7 +921,7 @@ def close_service(id):
     else:
         flash('Unable to close the service.', 'danger')
 
-    return redirect(url_for('professional_dashboard'))
+    return redirect(url_for(source_page))
 
 
 @app.route('/customer_dashboard')
