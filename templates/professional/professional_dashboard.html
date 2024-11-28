@@ -14,14 +14,12 @@
             padding: 0;
         }
 
-        /* Header styling */
         h1, h2 {
             color: #343a40;
             text-align: left;
             margin: 20px 0;
         }
 
-        /* Container for tables */
         .container-box {
             background-color: #ffffff;
             padding: 20px;
@@ -30,7 +28,6 @@
             margin-bottom: 30px;
         }
 
-        /* Table styling */
         .table-container {
             overflow-y: auto;
             max-height: 300px;
@@ -44,7 +41,7 @@
         }
 
         table th {
-            background-color: #007bff !important; /* Ensures it overrides other styles */
+            background-color: #007bff !important;
             color: white !important;
             position: sticky;
             top: 0;
@@ -57,42 +54,55 @@
             vertical-align: middle;
         }
 
-        /* Buttons */
-        button {
+        /* Action buttons styling */
+        .btn-action {
             padding: 6px 12px;
-            font-size: 12px;
+            font-size: 14px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            transition: background-color 0.3s, transform 0.2s;
             color: white;
-            background-color: #007bff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s ease;
         }
 
-        button:hover {
+        .btn-accept {
+            background-color: #28a745;
+            border: none;
+        }
+
+        .btn-accept:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-reject {
+            background-color: #dc3545;
+            border: none;
+        }
+
+        .btn-reject:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-start {
+            background-color: #007bff;
+            border: none;
+        }
+
+        .btn-start:hover {
             background-color: #0056b3;
             transform: translateY(-2px);
         }
 
-        button:focus {
-            outline: none;
+        .btn-close {
+            background-color: #ffc107;
+            border: none;
+            color: black;
         }
 
-        /* Table section spacing */
-        .table + h2 {
-            margin-top: 40px;
-        }
-
-        /* Responsive styling */
-        @media (max-width: 768px) {
-            table {
-                font-size: 12px;
-            }
-
-            button {
-                padding: 4px 10px;
-                font-size: 10px;
-            }
+        .btn-close:hover {
+            background-color: #e0a800;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -132,12 +142,16 @@
                             <td>{{ request.customer.address }} {{ request.customer.pincode }}</td>
                             <td>{{ request.request_date }}</td>
                             <td>
-                                <form method="POST" action="{{ url_for('accept_service', id=request.id) }}" style="display:inline;">
+                                <form method="POST" action="{{ url_for('accept_service', id=request.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit">Accept</button>
                                 </form>
+                                
                                 <form method="POST" action="{{ url_for('reject_service', id=request.id) }}" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit">Reject</button>
                                 </form>
+                                
                             </td>
                         </tr>
                         {% endfor %}
@@ -172,12 +186,17 @@
                             <td>{{ request.request_date }}</td>
                             <td>{{ request.status }}</td>
                             <td>
-                                <form method="POST" action="{{ url_for('start_service', id=request.id) }}" style="display:inline;">
+                                {% if request.status == 'pending' %}
+                                <form method="POST" action="{{ url_for('start_service', id=request.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit">Start Service</button>
                                 </form>
-                                <form method="POST" action="{{ url_for('close_service', id=request.id) }}" style="display:inline;"></form>
+                                {% elif request.status == 'in progress' %}
+                                <form method="POST" action="{{ url_for('close_service', id=request.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit">Close Service</button>
                                 </form>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -212,7 +231,11 @@
                             <td>{{ request.request_date }}</td>
                             <td>{{ request.status }}</td>
                             <td>
-                                <!-- Rating logic here -->
+                                {% if request.status == 'review pending' %}
+                                    Review Pending
+                                {% elif request.status == 'closed' %}
+                                    ⭐⭐⭐⭐⭐ <!-- Replace with dynamic rating display if available -->
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

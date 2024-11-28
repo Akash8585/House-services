@@ -5,7 +5,8 @@ from db import db
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import func
-
+from sqlalchemy.dialects.postgresql import ARRAY  # Use ARRAY for PostgreSQL
+from sqlalchemy.dialects.sqlite import JSON  
 
 # Function to generate unique IDs
 def generate_unique_id():
@@ -117,11 +118,11 @@ class Service(db.Model):
     duration = db.Column(db.Float, nullable=True)  # Use Float if you need fractional hours # Add duration (only date) column
 
     # Relationship to Request without backref
-    requests = db.relationship(
-        'Request',
-        lazy=True,
-        passive_deletes=True  # Enables `ondelete="SET NULL"` in foreign key
-    )
+  
+    requests = db.relationship('Request', back_populates='service', lazy=True, passive_deletes=True)
+
+    
+
 
 
 # Request Model
@@ -136,13 +137,12 @@ class Request(db.Model):
     status = db.Column(db.String(50), nullable=False)  # Pending, In Progress, Completed
     request_date = db.Column(db.DateTime, nullable=False)
     completion_date = db.Column(db.DateTime, nullable=True)
+    rejected_by = db.Column(db.JSON, default=list)  
 
     # Define relationships
-    customer = relationship('Customer', backref='requests')
-    professional = relationship('Professional', backref='requests')
-    service = relationship('Service')  # Remove backref here)
-    
-
+    professional = db.relationship('Professional', backref='requests')
+    service = db.relationship('Service', back_populates='requests')
+    customer = db.relationship('Customer', backref='requests')  
 # Feedback Model
 class Feedback(db.Model):
     __tablename__ = 'feedback'

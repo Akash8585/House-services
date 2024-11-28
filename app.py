@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, current_app
 from flask_migrate import Migrate
 from db import db
-from models import User, Professional, Customer, Service, Request, Feedback, Notification  # Add Service and other models here
+from models import User, Professional, Customer, Service, Request, Feedback, Notification, db  # Add Service and other models here
 from forms import CustomerSignupForm, LoginForm, ProfessionalSignupForm
 import os
 from models import generate_unique_id
@@ -15,6 +15,7 @@ from collections import defaultdict
 from sqlalchemy import extract
 from datetime import datetime
 import numpy as np
+
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
@@ -623,14 +624,37 @@ def admin_summary():
 
 @app.route('/professional_dashboard')
 def professional_dashboard():
-    # Query data for the professional dashboard
-    professional_id = session.get('user_id')  # Assuming the professional's ID is stored in the session
-    professional = Professional.query.get(professional_id)
-    
-    # Fetch service requests related to the professional
-    requested_services = Request.query.filter_by(professional_id=professional_id, status='pending').all()
-    accepted_services = Request.query.filter_by(professional_id=professional_id, status='in progress').all()
-    closed_services = Request.query.filter_by(professional_id=professional_id, status='closed').all()
+    professional_id = session.get('user_id')
+    professional = db.session.get(Professional, professional_id)
+
+    # Fetch all requested services
+    all_requested_services = Request.query.filter(
+        Request.status == 'requested',
+        Request.professional_id.is_(None)
+    ).all()
+
+    # Filter out requests rejected by this professional
+    requested_services = [
+        request for request in all_requested_services
+        if professional_id not in (request.rejected_by or [])
+    ]
+
+    # Accepted services
+    accepted_services = Request.query.filter(
+        Request.professional_id == professional_id,
+        Request.status.in_(['pending', 'in progress'])
+    ).all()
+
+    # Closed services
+    closed_services = Request.query.filter(
+        Request.professional_id == professional_id,
+        Request.status.in_(['review pending', 'closed'])
+    ).all()
+
+    # Debugging information
+    print("DEBUG: Requested Services for Professional Dashboard:")
+    for request in requested_services:
+        print(f"Service ID: {request.id}, Status: {request.status}, Professional ID: {request.professional_id}")
 
     return render_template(
         'professional/professional_dashboard.html',
@@ -639,6 +663,13 @@ def professional_dashboard():
         accepted_services=accepted_services,
         closed_services=closed_services
     )
+
+
+
+
+
+
+
 
 @app.route('/professional_search')
 def professional_search():
@@ -654,6 +685,85 @@ def professional_summary():
 def professional_profile():
     # Implement the logic for the search page
     return render_template('professional/professional_profile.html')
+
+
+
+@app.route('/accept_service/<id>', methods=['POST'])
+def accept_service(id):
+    professional_id = session.get('user_id')  # Assuming professional is logged in
+    service_request = Request.query.get(id)
+
+    if service_request and service_request.status == 'requested':
+        service_request.status = 'pending'
+        service_request.professional_id = professional_id  # Assign to the logged-in professional
+        db.session.commit()
+        flash('Service request accepted successfully!', 'success')
+    else:
+        flash('Unable to accept the service request.', 'danger')
+
+    return redirect(url_for('professional_dashboard'))  
+
+
+     # Assuming professional is logged in
+@app.route('/reject_service/<id>', methods=['POST'])
+def reject_service(id):
+    professional_id = session.get('user_id')  # Get the logged-in professional ID
+    service_request = Request.query.get(id)  # Fetch the service request
+
+    if service_request and service_request.status == 'requested':
+        # Ensure `rejected_by` is initialized as an empty list if None
+        if service_request.rejected_by is None:
+            service_request.rejected_by = []
+
+        # Only add the professional ID if it's not already in the list
+        if professional_id not in service_request.rejected_by:
+            service_request.rejected_by.append(professional_id)
+
+        db.session.commit()  # Save changes to the database
+        flash('Service request successfully rejected.', 'success')
+    else:
+        flash('Unable to reject the service request.', 'danger')
+
+    return redirect(url_for('professional_dashboard'))
+
+
+
+
+
+
+
+
+
+
+@app.route('/start_service/<id>', methods=['POST'])
+def start_service(id):
+    professional_id = session.get('user_id')  # Assuming professional is logged in
+    service_request = Request.query.get(id)
+
+    if service_request and service_request.professional_id == professional_id and service_request.status == 'pending':
+        service_request.status = 'in progress'  # Update status to "in progress"
+        db.session.commit()
+        flash('Service started successfully!', 'success')
+    else:
+        flash('Unable to start the service.', 'danger')
+
+    return redirect(url_for('professional_dashboard'))
+
+@app.route('/close_service/<id>', methods=['POST'])
+def close_service(id):
+    professional_id = session.get('user_id')  # Assuming professional is logged in
+    service_request = Request.query.get(id)
+
+    if service_request and service_request.professional_id == professional_id and service_request.status == 'in progress':
+        service_request.status = 'review pending'  # Update status to "review pending"
+        service_request.completion_date = datetime.utcnow()  # Set completion date
+        db.session.commit()
+        flash('Service closed successfully! Awaiting customer review.', 'success')
+    else:
+        flash('Unable to close the service.', 'danger')
+
+    return redirect(url_for('professional_dashboard'))
+
 
 @app.route('/customer_dashboard')
 def customer_dashboard():
