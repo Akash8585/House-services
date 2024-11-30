@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    
 
 </head>
 <style>
-/* General body styling */
 body {
     font-family: Arial, sans-serif;
     background: #f7f8fc;
@@ -17,7 +17,6 @@ body {
     padding: 0;
 }
 
-/* Header styling */
 .dashboard-header {
     background: #007bff;
     color: white;
@@ -28,13 +27,13 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Container for the whole dashboard */
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Stats Section */
+
 .dashboard-stats {
     display: flex;
     justify-content: space-between;
@@ -58,7 +57,7 @@ body {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
-/* Notification (Message) Icon */
+
 .message-container {
     position: absolute;
     right: 20px;
@@ -67,7 +66,7 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 10; /* Ensure it appears above other elements */
+    z-index: 10;
 }
 
 .message-container i {
@@ -75,7 +74,7 @@ body {
     color: #007bff !important;
 }
 
-/* Section Containers */
+
 .container-box {
     background-color: #ffffff;
     padding: 20px;
@@ -150,6 +149,11 @@ body {
 .badge-closed {
     background-color: #6c757d;
 }
+.badge-canceled {
+    background-color: #dc3545; /* Red color for canceled */
+    
+}
+
 .float-right {
     float: right;
 }
@@ -167,9 +171,14 @@ body {
             <div class="stat-box">Customers: {{ total_customers }}</div>
             <div class="stat-box">Pending Approvals: {{ pending_approvals }}</div>
             <div class="stat-box">Service Requests: {{ total_requests }}</div>
-            <div class="message-container">
-                <i class="bi bi-chat-left-fill"></i>
-            </div>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#messageBoxModal">
+                <i class="bi bi-envelope"></i> Messages
+                {% if unread_count > 0 %}
+                <span class="badge badge-danger">{{ unread_count }}</span>
+                {% endif %}
+            </button>
+
+
         </div>
 
         <div class="container-box">
@@ -364,6 +373,8 @@ body {
                                 <span class="badge badge-status badge-closed">Closed</span>
                                 {% elif request.status == 'requested' %}
                                 <span class="badge badge-status badge-pending">Requested</span>
+                                {% elif request.status == 'canceled' %}
+                                <span class="badge badge-status badge-canceled">Canceled</span>
                                 {% else %}
                                 <span class="badge badge-status badge-accepted">Accepted</span>
                                 {% endif %}
@@ -377,6 +388,7 @@ body {
     </div>
     {% include 'admin/add_service.html' %}
     {% include 'admin/edit_service.html' %}
+    {% include 'admin/messages.html' %}
 
     {% if professional %}
     {% include 'admin/details.html' %}
@@ -402,6 +414,8 @@ body {
         });
     </script>
     {% endif %}
+    
+    
 
 
 

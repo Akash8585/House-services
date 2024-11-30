@@ -159,9 +159,14 @@
           {{ form.phone(class_="form-control") }}
         </div>
         <div class="mb-3">
-          {{ form.service_type.label(class_="form-label") }}
-          {{ form.service_type(class_="form-control") }}
-        </div>
+          <label for="serviceType" class="form-label">Service Type</label>
+          <select class="form-control" id="serviceType" name="service_type" required>
+              <option value="" disabled selected>Select a service</option>
+              {% for service_name in service_names %}
+                  <option value="{{ service_name }}">{{ service_name }}</option>
+              {% endfor %}
+          </select>
+      </div>
         <div class="mb-3">
           {{ form.experience.label(class_="form-label") }}
           {{ form.experience(class_="form-control") }}

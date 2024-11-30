@@ -171,7 +171,14 @@
           {{ form.pincode.label(class_="form-label") }}
           {{ form.pincode(class_="form-control") }}
         </div>
-        <button type="submit" class="btn btn-register">Register</button>
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#bookServiceModal"
+        data-service-id="{{ service.id }}" data-service-name="{{ service.service_name }}"
+        data-description="{{ service.service_description }}" data-base-price="{{ service.price }}"
+        data-duration="{{ service.duration }}" 
+        data-source="customer_search">
+        Book
+        </button>
+
       </form>
     </div>
   </div>

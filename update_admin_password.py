@@ -23,11 +23,11 @@ from models import User  # Import your User model
 # Ensure app context for database operations
 with app.app_context():
     # Fetch the admin user by email
-    user = User.query.filter_by(email="jane.customer@example.com").first()
+    user = User.query.filter_by(email="admin@example.com").first()
     
     if user:
         # Use the password property to hash the password safely
-        user.password = "customer123"  # Replace with the new raw password
+        user.password = "admin123"  # Replace with the new raw password
         db.session.commit()  # Commit the changes
         print("Customer password updated successfully.")
     else:

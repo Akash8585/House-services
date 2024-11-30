@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Summary</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f8fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .stat-box {
+    background-color: #f8f9fa; /* Black background */
+    color: #000; /* White text */
+    padding: 15px;
+    border: 1px solid #fff; /* White border */
+    border-radius: 8px; /* Rounded corners */
+    display: flex; /* Enable flexbox layout */
+    justify-content: space-between; /* Space between h4 and p */
+    align-items: center; /* Center vertically */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    margin: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-box h4 {
+    margin: 0; /* Remove default margin */
+    font-size: 1.2rem; /* Adjust font size */
+}
+
+.stat-box p {
+    margin: 0; /* Remove default margin */
+    font-size: 1.5rem; /* Adjust font size for the number */
+    font-weight: bold; /* Make the number bold */
+}
+
+
+        .container-box {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        table th {
+            background-color: #007bff !important;
+            color: white !important;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    {% extends 'base.html' %}
+    {% block navbar %}
+        {% include 'navbars/customer_navbar.html' %}
+    {% endblock %}
+
+    {% block content %}
+    <div class="container mt-5">
+        <h1>Customer Summary</h1>
+
+        <!-- Total Services Taken -->
+        <div class="stat-box">
+            <h4>Total Services Taken</h4>
+            <p>{{ total_services_taken }}</p>
+        </div>
+
+        <!-- Service Requests Chart -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Requests Chart</h5>
+                    {% if charts['service_requests'] %}
+                        <img src="{{ charts['service_requests'] }}" alt="Service Requests Chart" style="width: 100%; height: auto;">
+                    {% else %}
+                        <p>No data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="container-box">
+                    <h5>Service Requests Details</h5>
+                    <ul class="list-group">
+                        {% for service, count in service_requests.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ service }}
+                            <span class="badge badge-primary badge-pill">{{ count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>

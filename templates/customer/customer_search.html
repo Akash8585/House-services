@@ -4,9 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Search</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f7f8fc;
+    margin: 0;
+    padding: 0;
+}
+
+.table-container {
+    overflow-y: auto;
+    max-height: 300px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background-color: #007bff !important;
+    color: white !important;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    text-align: center;
+}
+
+.table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.flash-messages {
+    margin-top: 10px;
+}
+</style>
 <body>
-    <h1>Customer Search Page</h1>
-    <!-- Add your search form and results here -->
+    {% extends 'base.html' %}
+    {% block navbar %}
+        {% include 'navbars/customer_navbar.html' %}
+    {% endblock %}
+
+    {% block content %}
+    <div class="container mt-5">
+        <h1>Customer Search</h1>
+        <form method="GET" action="{{ url_for('customer_search') }}">
+            <div class="form-row">
+                <div class="form-group col-md-9">
+                    
+                    <input type="text" class="form-control" id="search_query" name="search_query" value="{{ search_query }}" placeholder="Enter service name">
+                </div>
+                <div class="form-group col-md-3 align-self-end">
+                    <button type="submit" class="btn btn-primary btn-block">Search</button>
+                </div>
+            </div>
+        </form>
+
+        {% if filtered_services %}
+            <div class="container-box mt-4">
+                <h4>Search Results</h4>
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Service Name</th>
+                                <th>Description</th>
+                                <th>Base Price</th>
+                                <th>Duration</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in filtered_services %}
+                            <tr>
+                                <td>{{ service.id }}</td>
+                                <td>{{ service.service_name }}</td>
+                                <td>{{ service.service_description }}</td>
+                                <td>{{ service.price }}</td>
+                                <td>{{ service.duration }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-success" data-toggle="modal"           data-target="#bookServiceModal"
+                                        data-service-id="{{ service.id }}" data-service-name="{{ service.service_name }}"
+                                        data-description="{{ service.service_description }}" data-base-price="{{ service.price }}"
+                                        data-duration="{{ service.duration }}">
+                                    Book
+                                </button>
+
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info mt-4">No results found.</div>
+        {% endif %}
+    </div>
+    {% include 'customer/book_service.html' %}
+    {% endblock %}
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookButtons = document.querySelectorAll('.btn-success');
+            bookButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    $('#bookServiceModal').modal('show');
+                });
+            });
+        });
+    </script>
 </body>
 </html>

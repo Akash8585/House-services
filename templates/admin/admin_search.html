@@ -79,8 +79,9 @@ body {
                     <option value="">All</option>
                     {% if entity == 'service_requests' %}
                     <option value="requested" {% if status == 'requested' %}selected{% endif %}>Requested</option>
-                    <option value="accepted" {% if status not in ['requested', 'closed'] %}selected{% endif %}>Accepted</option>
+                    <option value="accepted" {% if status not in ['requested', 'closed', 'cancelled'] %}selected{% endif %}>Accepted</option>
                     <option value="closed" {% if status == 'closed' %}selected{% endif %}>Closed</option>
+                    <option value="canceled" {% if status == 'canceled' %}selected{% endif %}>Canceled</option>
                     {% elif entity == 'professionals' %}
                         <option va  lue="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>

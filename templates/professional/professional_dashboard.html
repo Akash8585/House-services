@@ -234,7 +234,19 @@
                                 {% if request.status == 'review pending' %}
                                     Review Pending
                                 {% elif request.status == 'closed' %}
-                                    ⭐⭐⭐⭐⭐ <!-- Replace with dynamic rating display if available -->
+                                    {% if request.feedbacks %}
+                                        {% for feedback in request.feedbacks %}
+                                            {% for i in range(1, 6) %}
+                                                {% if i <= feedback.rating %}
+                                                    <span style="color: gold;">&#9733;</span>
+                                                {% else %}
+                                                    <span style="color: lightgray;">&#9733;</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <p>No rating available.</p>
+                                    {% endif %}
                                 {% endif %}
                             </td>
                         </tr>

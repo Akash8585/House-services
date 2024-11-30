@@ -7,6 +7,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import ARRAY  # Use ARRAY for PostgreSQL
 from sqlalchemy.dialects.sqlite import JSON  
+from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON 
+
 
 # Function to generate unique IDs
 def generate_unique_id():
@@ -74,7 +76,7 @@ class Professional(User):
     id = db.Column(db.String(6), db.ForeignKey('users.id'), primary_key=True)
     service_type = db.Column(db.String(100), nullable=False)
     experience = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(50), default='pending')  # Add status column
+    status = db.Column(db.String(50), default='pending')  
 
     __mapper_args__ = {
         'polymorphic_identity': 'professional',
@@ -127,23 +129,6 @@ class Service(db.Model):
 
 # Request Model
 # Request Model
-class Request(db.Model):
-    __tablename__ = 'requests'
-    
-    id = db.Column(db.String(6), primary_key=True, default=generate_unique_id, unique=True)
-    customer_id = db.Column(db.String(6), db.ForeignKey('customers.id'), nullable=False)
-    professional_id = db.Column(db.String(6), db.ForeignKey('professionals.id'), nullable=True)
-    service_id = db.Column(db.String(6), db.ForeignKey('services.id', ondelete="SET NULL"), nullable=True)
-    status = db.Column(db.String(50), nullable=False)  # Pending, In Progress, Completed
-    request_date = db.Column(db.DateTime, nullable=False)
-    completion_date = db.Column(db.DateTime, nullable=True)
-    rejected_by = db.Column(db.JSON, default=list)  
-    fee = db.Column(db.Float, nullable=True)
-
-    # Define relationships
-    professional = db.relationship('Professional', backref='requests')
-    service = db.relationship('Service', back_populates='requests')
-    customer = db.relationship('Customer', backref='requests')  
 # Feedback Model
 class Feedback(db.Model):
     __tablename__ = 'feedback'
@@ -155,11 +140,30 @@ class Feedback(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comments = db.Column(db.Text, nullable=True)
     feedback_date = db.Column(db.DateTime, nullable=False)
-      # Add this line
 
     customer = db.relationship("Customer", backref="feedbacks")
     professional = db.relationship("Professional", backref="feedbacks")
-    request = db.relationship('Request', backref='feedbacks')  # Add this line
+    # Remove the backref here to avoid conflict
+    request = db.relationship('Request', back_populates='feedbacks')
+
+# Request Model
+class Request(db.Model):
+    __tablename__ = 'requests'
+    
+    id = db.Column(db.String(6), primary_key=True, default=generate_unique_id, unique=True)
+    customer_id = db.Column(db.String(6), db.ForeignKey('customers.id'), nullable=False)
+    professional_id = db.Column(db.String(6), db.ForeignKey('professionals.id'), nullable=True)
+    service_id = db.Column(db.String(6), db.ForeignKey('services.id', ondelete="SET NULL"), nullable=True)
+    status = db.Column(db.String(50), nullable=False)
+    request_date = db.Column(db.Date, nullable=False)
+    completion_date = db.Column(db.DateTime, nullable=True)
+    rejected_by = db.Column(SQLiteJSON, default=list)
+    fee = db.Column(db.Float, nullable=True)
+
+    professional = db.relationship('Professional', backref='requests')
+    service = db.relationship('Service', back_populates='requests')
+    customer = db.relationship('Customer', backref='requests')
+    feedbacks = db.relationship('Feedback', back_populates='request', lazy=True)
 
 
 # Notification Model
@@ -168,7 +172,7 @@ class Notification(db.Model):
     
     id = db.Column(db.String(6), primary_key=True, default=generate_unique_id, unique=True)
     sender_id = db.Column(db.String(6), db.ForeignKey('users.id'), nullable=False)
-    type = db.Column(db.String(50), nullable=False)  # e.g., "Review Request", "Blocked User"
+    type = db.Column(db.String(50), nullable=False)  
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
