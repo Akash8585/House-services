@@ -45,8 +45,8 @@
         }
 
         .table-container {
-        max-height: 300px; /* Set the height of the table container */
-        overflow-y: auto; /* Enable vertical scrolling */
+        max-height: 300px; 
+        overflow-y: auto; 
         border: 1px solid #ddd;
         border-radius: 8px;
         }
@@ -80,7 +80,7 @@
 
     {% block content %}
     <div class="container mt-5">
-        <h1>Professional Summary</h1>
+        <h1>Summary</h1>
 
         <!-- Stats Row -->
         <div class="stats-row">
@@ -106,7 +106,7 @@
             </div>
         </div>
 
-        <!-- Monthly Service Breakdown -->
+       
         <div class="row mt-4">
             <div class="col-md-6">
                 <div class="container-box">
@@ -133,7 +133,6 @@
             </div>
         </div>
 
-        <!-- Rating Distribution -->
         <div class="row mt-4">
             <div class="col-md-6">
                 <div class="container-box">
@@ -160,7 +159,6 @@
             </div>
         </div>
 
-        <!-- Customer Feedback -->
         <div class="container-box">
             <h4>Customer Feedback</h4>
             <div class="table-container">
@@ -181,7 +179,6 @@
                                 <td>{{ feedback.request.request_date.strftime('%Y-%m-%d') }}</td>
                                 <td>{{ feedback.comments }}</td>
                                 <td>
-                                    <!-- Render stars for ratings -->
                                     {% for i in range(1, 6) %}
                                         {% if i <= feedback.rating %}
                                             <span style="color: gold;">&#9733;</span>

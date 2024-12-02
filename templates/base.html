@@ -30,7 +30,7 @@
   
   {% block navbar %}{% endblock %}
   
-  <!-- Flash Message -->
+
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div class="flash-container">
@@ -43,13 +43,12 @@
   {% endif %}
   {% endwith %}
 
-  <!-- Page Content -->
+
   <div>
     {% block content %}{% endblock %}
   </div>
 
   <script>
-    // Automatically hide flash messages after 2 seconds
     window.addEventListener('DOMContentLoaded', () => {
       const flashContainer = document.querySelector('.flash-container');
       if (flashContainer) {

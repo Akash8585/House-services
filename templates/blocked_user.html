@@ -74,17 +74,14 @@
             </div>
             
 
-        <!-- Blocked Message -->
         <h1>You are blocked</h1>
         <p>You are currently blocked by the admin. Please send a request for review to resolve this issue.</p>
         
-        <!-- Ask for Review Button -->
         <form method="POST" action="{{ url_for('blocked_user_page') }}" style="display: inline;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary">Ask for Review</button>
         </form>
 
-        <!-- Logout Button -->
         <form method="GET" action="{{ url_for('logout') }}" style="display: inline;">
             <button type="submit" class="btn btn-secondary">Logout</button>
         </form>

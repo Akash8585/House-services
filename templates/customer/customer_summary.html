@@ -14,14 +14,14 @@
         }
 
         .stat-box {
-    background-color: #f8f9fa; /* Black background */
-    color: #000; /* White text */
+    background-color: #f8f9fa;
+    color: #000; 
     padding: 15px;
-    border: 1px solid #fff; /* White border */
-    border-radius: 8px; /* Rounded corners */
-    display: flex; /* Enable flexbox layout */
-    justify-content: space-between; /* Space between h4 and p */
-    align-items: center; /* Center vertically */
+    border: 1px solid #fff;
+    border-radius: 8px; 
+    display: flex; 
+    justify-content: space-between;
+    align-items: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     flex: 1;
     margin: 10px;
@@ -29,14 +29,14 @@
 }
 
 .stat-box h4 {
-    margin: 0; /* Remove default margin */
-    font-size: 1.2rem; /* Adjust font size */
+    margin: 0; 
+    font-size: 1.2rem; 
 }
 
 .stat-box p {
-    margin: 0; /* Remove default margin */
-    font-size: 1.5rem; /* Adjust font size for the number */
-    font-weight: bold; /* Make the number bold */
+    margin: 0; 
+    font-size: 1.5rem; 
+    font-weight: bold; 
 }
 
 
@@ -66,15 +66,15 @@
 
     {% block content %}
     <div class="container mt-5">
-        <h1>Customer Summary</h1>
+        <h1>Summary</h1>
 
-        <!-- Total Services Taken -->
+        
         <div class="stat-box">
             <h4>Total Services Taken</h4>
             <p>{{ total_services_taken }}</p>
         </div>
 
-        <!-- Service Requests Chart -->
+        
         <div class="row mt-4">
             <div class="col-md-6">
                 <div class="container-box">

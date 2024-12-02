@@ -7,10 +7,10 @@
     <style>
        #rating {
     display: flex;
-    flex-direction: row-reverse; /* Reverse the order of elements */
+    flex-direction: row-reverse; 
 }
 #rating input {
-    display: none; /* Hide the radio buttons */
+    display: none;
 }
 #rating label {
     font-size: 2rem;
@@ -22,7 +22,7 @@
 }
 #rating label:hover,
 #rating label:hover ~ label {
-    color: #ffc700; /* Highlight stars on hover */
+    color: #ffc700; 
 }
 
     </style>
@@ -99,7 +99,7 @@
             var professionalName = button.data('professional-name');
             var date = button.data('date');
             var price = button.data('price');
-            var source = button.data('source');  // Get source from the button
+            var source = button.data('source');  
 
             var modal = $(this);
             modal.find('#serviceId').val(requestId);

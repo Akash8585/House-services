@@ -21,16 +21,16 @@
       display: flex;
       background: #ffffff;
       border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       width: 900px;
       max-width: 90%;
       height: auto;
     }
 
-    /* Left Section */
+    
     .signup-left {
-      background: #007bff; /* Blue background */
+      background: #007bff;
       color: #ffffff;
       padding: 40px;
       flex: 1;
@@ -69,7 +69,7 @@
       color: #007bff;
     }
 
-    /* Right Section */
+    
     .signup-right {
       flex: 1.5;
       padding: 40px;
@@ -96,12 +96,12 @@
     }
 
     .form-control:focus {
-      border-color: #28a745; /* Green focus border consistent with login page */
+      border-color: #28a745;
       box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
     }
 
     .btn-register {
-      background: #28a745; /* Green button consistent with "Register as Professional" */
+      background: #28a745; 
       color: #ffffff;
       font-size: 1rem;
       font-weight: bold;
@@ -115,7 +115,7 @@
     }
 
     .btn-register:hover {
-      background: #218838; /* Darker green on hover */
+      background: #218838;
       transform: translateY(-2px);
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     }
@@ -133,16 +133,16 @@
   </style>
 </head>
 <body>
-  <!-- Signup Container -->
+  
   <div class="signup-container">
-    <!-- Left Section -->
+   
     <div class="signup-left">
       <h1>Welcome to A-Z Services</h1>
       <p>Sign up as a customer and experience hassle-free household services like never before.</p>
       <a href="{{ url_for('login') }}">Already have an account? Login</a>
     </div>
 
-    <!-- Right Section -->
+   
     <div class="signup-right">
       <h2>Create Your Customer Account</h2>
       <form method="POST" action="{{ url_for('customer_signup') }}">
@@ -171,13 +171,7 @@
           {{ form.pincode.label(class_="form-label") }}
           {{ form.pincode(class_="form-control") }}
         </div>
-        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#bookServiceModal"
-        data-service-id="{{ service.id }}" data-service-name="{{ service.service_name }}"
-        data-description="{{ service.service_description }}" data-base-price="{{ service.price }}"
-        data-duration="{{ service.duration }}" 
-        data-source="customer_search">
-        Book
-        </button>
+        <button type="submit" class="btn btn-register">Register</button>
 
       </form>
     </div>

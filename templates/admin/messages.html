@@ -7,18 +7,18 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .modal-dialog {
-            max-width: 600px; /* Set a fixed width for the modal */
+            max-width: 600px; 
         }
     
         .modal-content {
-            max-height: 80vh; /* Set a fixed height for the modal */
-            overflow-y: auto; /* Enable vertical scrolling */
+            max-height: 80vh; 
+            overflow-y: auto; 
         }
     
         .modal-body {
-        max-height: 70vh; /* Adjust as needed */
+        max-height: 70vh; 
         overflow-y: auto;
-        padding-bottom: 0; /* Remove extra padding */
+        padding-bottom: 0;
     }
 
 
@@ -63,8 +63,7 @@
     
 </head>
 <body>
-    <!-- Messages Modal -->
-        <!-- Messages Modal -->
+   
         <div class="modal fade" id="messageBoxModal" tabindex="-1" aria-labelledby="messageBoxModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable modal-lg">
                 <div class="modal-content">
@@ -75,7 +74,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <!-- New Messages Section -->
+                        
                         <h6>New Messages</h6>
                         <div>
                             {% for notification in notifications if not notification.is_read %}
@@ -99,7 +98,7 @@
         
                         <hr>
         
-                        <!-- Old Messages Section -->
+                       
                         <h6>Old Messages</h6>
                         <div>
                             {% for notification in notifications if notification.is_read %}
@@ -140,7 +139,7 @@
                     type: 'POST',
                     url: '/mark_notifications_read',
                     headers: {
-                        'X-CSRFToken': '{{ csrf_token() }}'  // Include CSRF token
+                        'X-CSRFToken': '{{ csrf_token() }}'  
                     },
                     success: function() {
                         console.log('Notifications marked as read');

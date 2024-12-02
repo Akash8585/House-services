@@ -7,7 +7,6 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        /* Style for Modal Header */
         .modal-header {
             background-color: #007bff;
             color: white;
@@ -29,12 +28,11 @@
             opacity: 1;
         }
 
-        /* Style for Modal Body */
+       
         .modal-body {
             padding: 20px 30px;
         }
 
-        /* Style for Form Fields */
         .form-group label {
             font-weight: bold;
             color: #343a40;
@@ -50,8 +48,6 @@
             border-color: #007bff;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
-
-        /* Style for Modal Footer Buttons */
         .modal-footer {
             padding: 15px 30px;
         }
@@ -83,7 +79,6 @@
     </style>
 </head>
 <body>
-    <!-- Book Service Modal -->
     <div class="modal fade" id="bookServiceModal" tabindex="-1" aria-labelledby="bookServiceModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -137,12 +132,11 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-        // Populate modal with service details when triggered
         $('#bookServiceModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget); // Button that triggered the modal
-            var serviceId = button.data('service-id'); // Extract service ID from data attribute
+            var button = $(event.relatedTarget);
+            var serviceId = button.data('service-id'); 
             
-            // Populate modal fields
+            
             var modal = $(this);
             modal.find('#serviceId').val(serviceId);
             modal.find('#serviceName').val(button.data('service-name'));
@@ -150,7 +144,7 @@
             modal.find('#basePrice').val(button.data('base-price'));
             modal.find('#duration').val(button.data('duration'));
 
-            // Update the form action dynamically
+            
             modal.find('form').attr('action', `/book_service/${serviceId}`);  
         });
 
