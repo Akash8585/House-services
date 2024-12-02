@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, current_app
 from flask_migrate import Migrate
+from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from db import db
 from models import User, Professional, Customer, Service, Request, Feedback, Notification, db  # Add Service and other models here
 from forms import CustomerSignupForm, LoginForm, ProfessionalSignupForm
@@ -7,11 +8,8 @@ import os
 from models import generate_unique_id
 from flask_wtf.csrf import CSRFProtect
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('Agg')   
 import matplotlib.pyplot as plt
-import io
-import base64
-from collections import defaultdict
 from sqlalchemy import extract
 from datetime import datetime
 import numpy as np
@@ -22,7 +20,8 @@ app = Flask(__name__, template_folder='templates')
 app.secret_key = 'your_secret_key'
 
 csrf = CSRFProtect(app)
-# Database configuration
+
+# Database Configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "instance", "service_platform.db")
 if not os.path.exists(os.path.dirname(db_path)):
@@ -30,65 +29,60 @@ if not os.path.exists(os.path.dirname(db_path)):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['WTF_CSRF_TIME_LIMIT'] = 3600 
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# Flask-Login Setup
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'  # Redirect to this view if not logged in
+login_manager.login_message = "Please log in to access this page."
+login_manager.login_message_category = "danger"
+
+# User Loader for LoginManager
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
 
 # Routes
 @app.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('You have been logged out.', 'info')
-    return redirect(url_for('login'))
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    if request.method == 'POST' and form.validate_on_submit():
+    if form.validate_on_submit():
         email = form.email.data.strip()
         password = form.password.data.strip()
 
-        # Retrieve the user based on email
+        # Find user by email
         user = User.query.filter_by(email=email).first()
+        if user and user.verify_password(password):  # Verify password
+            login_user(user)  # Login the user
+            session['user_id'] = user.id  # Store user ID in session
+            session['role'] = user.role  # Store user role in session
+            flash('Login successful!', 'success')
 
-        if user:
-            # Debug: Print stored hash and input password for troubleshooting
-            print(f"Stored Hash: {user._password}")
-            print(f"Input Password: {repr(password)}")
-            
-            if user.verify_password(password):  # Verifying the password
-                session['user_id'] = user.id
-                session['role'] = user.role
-                flash('Login successful!', 'success')
-
-                
-
-                # Redirect based on role
-                if user.role == 'admin':
-                    return redirect(url_for('admin_dashboard'))
-                
-                if user.status == 'blocked':
-                    return redirect(url_for('blocked_user_page'))
-                
-                if user.role == 'professional':
-                    return redirect(url_for('professional_dashboard'))
-                elif user.role == 'customer':
-                    return redirect(url_for('customer_dashboard'))
-            else:
-                # Debug: Log a message if password verification fails
-                print("Password verification failed!")
-                flash('Invalid credentials. Please check your email and password.', 'danger')
+            # Redirect based on role
+            if user.role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user.role == 'professional':
+                return redirect(url_for('professional_dashboard'))
+            elif user.role == 'customer':
+                return redirect(url_for('customer_dashboard'))
         else:
-            # Debug: Log a message if user not found
-            print(f"No user found with email: {email}")
-            flash('Invalid credentials. Please check your email and password.', 'danger')
+            flash('Invalid email or password.', 'danger')
 
     return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()  # Use Flask-Login's logout_user
+    session.clear()  # Clear the session
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
 
 
 
@@ -174,11 +168,13 @@ def blocked_user_page():
 
 
 @app.route('/admin_dashboard', methods=['GET', 'POST'])
+@login_required
 def admin_dashboard():
     # Query data for dashboard
     professionals = Professional.query.all()
     customers = Customer.query.all()
     services = Service.query.all()
+
 
     notifications = Notification.query.order_by(Notification.timestamp.desc()).all()
     unread_count = sum(1 for notification in notifications if not notification.is_read)
@@ -701,6 +697,7 @@ def admin_summary():
 
 
 @app.route('/professional_dashboard')
+@login_required
 def professional_dashboard():
     professional_id = session.get('user_id')
     professional = db.session.get(Professional, professional_id)
@@ -1020,9 +1017,14 @@ def close_service(id):
 
 
 @app.route('/customer_dashboard', methods=['GET', 'POST'])
+@login_required
 def customer_dashboard():
     customer_id = session.get('user_id')
     customer = User.query.get(customer_id)
+
+    if not customer:
+        flash('Customer not found.', 'danger')
+        return redirect(url_for('login'))
     
     available_services = Service.query.all()
     

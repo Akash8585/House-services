@@ -1,12 +1,12 @@
 import random
 import string
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import ARRAY  # Use ARRAY for PostgreSQL
-from sqlalchemy.dialects.sqlite import JSON  
 from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON 
 
 
@@ -18,7 +18,7 @@ def generate_unique_id():
 
 
 # User Model
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     
     id = db.Column(db.String(6), primary_key=True, default=generate_unique_id, unique=True)
