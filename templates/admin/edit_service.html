@@ -127,16 +127,15 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     
     <script>
-        // Populate the Edit Modal with Service Data
+        
         $('#editServiceModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget); // Button that triggered the modal
-            var serviceId = button.data('id'); // Extract service ID from data-* attributes
+            var button = $(event.relatedTarget);
+            var serviceId = button.data('id');
             var serviceName = button.data('name');
             var description = button.data('description');
             var basePrice = button.data('price');
             var duration = button.data('duration');
     
-            // Populate the form fields in the modal
             var modal = $(this);
             modal.find('#editServiceId').val(serviceId);
             modal.find('#editServiceName').val(serviceName);

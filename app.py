@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from db import db
-from models import User, Professional, Customer, Service, Request, Feedback, Notification, db  # Add Service and other models here
+from models import User, Professional, Customer, Service, Request, Feedback, Notification, db 
 from forms import CustomerSignupForm, LoginForm, ProfessionalSignupForm
 import os
 from models import generate_unique_id
@@ -21,7 +21,7 @@ app.secret_key = 'your_secret_key'
 
 csrf = CSRFProtect(app)
 
-# Database Configuration
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "instance", "service_platform.db")
 if not os.path.exists(os.path.dirname(db_path)):
@@ -33,18 +33,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Flask-Login Setup
+
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'  # Redirect to this view if not logged in
+login_manager.login_view = 'login'  
 login_manager.login_message = "Please log in to access this page."
 login_manager.login_message_category = "danger"
 
-# User Loader for LoginManager
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
 
-# Routes
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -56,15 +56,14 @@ def login():
         email = form.email.data.strip()
         password = form.password.data.strip()
 
-        # Find user by email
         user = User.query.filter_by(email=email).first()
-        if user and user.verify_password(password):  # Verify password
-            login_user(user)  # Login the user
-            session['user_id'] = user.id  # Store user ID in session
-            session['role'] = user.role  # Store user role in session
+        if user and user.verify_password(password):  
+            login_user(user)  
+            session['user_id'] = user.id  
+            session['role'] = user.role  
             flash('Login successful!', 'success')
 
-            # Redirect based on role
+
             if user.role == 'admin':
                 return redirect(url_for('admin_dashboard'))
             elif user.role == 'professional':
@@ -79,8 +78,8 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()  # Use Flask-Login's logout_user
-    session.clear()  # Clear the session
+    logout_user()  
+    session.clear() 
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
@@ -97,7 +96,7 @@ def professional_signup():
         new_professional = Professional(
             name=form.name.data,
             email=form.email.data,
-            password=form.password.data,  # Uses the password setter
+            password=form.password.data,
             phone_number=form.phone.data,
             service_type=form.service_type.data,
             experience=form.experience.data,
@@ -109,7 +108,7 @@ def professional_signup():
 
         if new_professional.status == 'pending':
             notification = Notification(
-                sender_id=new_professional.id,
+                professional_id=new_professional.id, 
                 type='New Professional Registration',
                 message=f'A new professional {new_professional.name} ({new_professional.email}) has registered and is pending approval.',
                 timestamp=datetime.utcnow()
@@ -120,6 +119,7 @@ def professional_signup():
         flash('Professional account created successfully!', 'success')
         return redirect(url_for('login'))
     return render_template('professional/professional_signup.html', form=form, service_names=service_names)
+
 
 @app.route('/customer_signup', methods=['GET', 'POST'])
 def customer_signup():
@@ -132,7 +132,7 @@ def customer_signup():
             new_customer = Customer(
                 name=form.name.data,
                 email=form.email.data,
-                password=form.password.data,  # Uses the password setter
+                password=form.password.data, 
                 phone_number=form.phone.data,
                 address=form.address.data,
                 pincode=form.pincode.data
@@ -146,31 +146,49 @@ def customer_signup():
 @app.route('/blocked_user_page', methods=['GET', 'POST'])
 def blocked_user_page():
     user_id = session.get('user_id')
-    user = User.query.get(user_id)
+    if not user_id:
+        return redirect(url_for('login'))  
+    customer = Customer.query.get(user_id)
+    professional = Professional.query.get(user_id)
 
-    if not user or user.status != 'blocked':
-        return redirect(url_for('login'))  # Redirect if not blocked or not logged in
+    if not customer and not professional:
+        return redirect(url_for('login'))  
 
+    
+    if customer and customer.status != 'blocked' or professional and professional.status != 'blocked':
+        return redirect(url_for('login')) 
     if request.method == 'POST':
-        # Handle request for review
-        new_notification = Notification(
-            sender_id=user.id,
-            type='Review Request',
-            message=f"User {user.name} (ID: {user.id}) is requesting an account review.",
-            timestamp=datetime.utcnow(),
-            is_read=False
-        )
+        
+        if customer:
+            new_notification = Notification(
+                customer_id=customer.id,  
+                type='Review Request',
+                message=f"Customer {customer.name} (ID: {customer.id}) is requesting an account review.",
+                timestamp=datetime.utcnow(),
+                is_read=False
+            )
+        elif professional:
+            new_notification = Notification(
+                professional_id=professional.id,  
+                type='Review Request',
+                message=f"Professional {professional.name} (ID: {professional.id}) is requesting an account review.",
+                timestamp=datetime.utcnow(),
+                is_read=False
+            )
         db.session.add(new_notification)
         db.session.commit()
         flash('Your request has been sent to the admin.', 'success')
 
+    
+    user = customer if customer else professional
     return render_template('blocked_user.html', user=user)
+
 
 
 @app.route('/admin_dashboard', methods=['GET', 'POST'])
 @login_required
 def admin_dashboard():
-    # Query data for dashboard
+    
     professionals = Professional.query.all()
     customers = Customer.query.all()
     services = Service.query.all()
@@ -179,7 +197,7 @@ def admin_dashboard():
     notifications = Notification.query.order_by(Notification.timestamp.desc()).all()
     unread_count = sum(1 for notification in notifications if not notification.is_read)
 
-    # Group service requests
+    
     requests = Request.query.all()
     grouped_requests = {
         "requested": [r for r in requests if r.status == "requested"],
@@ -189,7 +207,7 @@ def admin_dashboard():
         ],
     }
 
-    # Count statistics
+   
     total_professionals = len(professionals)
     total_customers = len(customers)
     total_requests = len(requests)
@@ -197,7 +215,7 @@ def admin_dashboard():
 
     professional = None
 
-    # Handle service addition via form submission
+    
     if request.method == "POST":
         service_name = request.form.get("service_name")
         service_description = request.form.get("description")
@@ -215,7 +233,7 @@ def admin_dashboard():
             db.session.add(new_service)
             db.session.commit()
             flash("New service added successfully!", "success")
-            return redirect(url_for("admin_dashboard"))  # Refresh the page
+            return redirect(url_for("admin_dashboard"))  
 
         flash("Please fill out all required fields.", "danger")
 
@@ -250,22 +268,21 @@ def mark_notifications_read():
 
 @app.route('/delete_service/<id>', methods=['POST'])
 def delete_service(id):
-    # Retrieve the service by ID
+    
     service = Service.query.get(id)
     if service:
         try:
-            db.session.delete(service)  # Delete the service
+            db.session.delete(service)  
             db.session.commit()
             flash(f'Service "{service.service_name}" has been deleted.', 'success')
         except Exception as e:
-            db.session.rollback()  # Roll back in case of error
+            db.session.rollback()  
             flash(f'Failed to delete service: {str(e)}', 'danger')
     else:
         flash('Service not found.', 'danger')
 
-    return redirect(request.referrer or url_for('admin_dashboard'))  # Redirect back to the admin dashboard
-  # Redirect back to the admin dashboard
-  # Redirect back to the admin dashboard
+    return redirect(request.referrer or url_for('admin_dashboard')) 
+  
 @app.route('/edit_service', methods=['POST'])
 def edit_service():
     service_id = request.form.get('service_id')
@@ -298,13 +315,12 @@ def approve_professional(id):
         professional.status = 'approved'
         db.session.commit()
         flash(f'Professional {professional.name} has been approved.', 'success')
-    return redirect(request.referrer or url_for('admin_dashboard'))  # Redirect back to the referring page (search)
+    return redirect(request.referrer or url_for('admin_dashboard'))  
 
 @app.route('/reject_professional/<id>', methods=['POST'])
 def reject_professional(id):
     professional = Professional.query.get(id)
     if professional:
-        # Delete the professional directly
         db.session.delete(professional)
         db.session.commit()
         flash(f'Professional {professional.name} has been rejected and removed.', 'success')
@@ -329,7 +345,7 @@ def block_professional(id):
 def unblock_user(id):
     professional = Professional.query.get(id)
     if professional:
-        professional.status = 'approved'  # or 'active', depending on your logic
+        professional.status = 'approved'  
         db.session.commit()
         flash(f'Professional {professional.name} has been unblocked.', 'success')
     else:
@@ -351,7 +367,7 @@ def block_customer(id):
 def unblock_customer(id):
        customer = Customer.query.get(id)
        if customer:
-           customer.status = 'active'  # or whatever status indicates unblocked
+           customer.status = 'active' 
            db.session.commit()
            flash(f'Customer {customer.name} has been unblocked.', 'success')
        else:
@@ -363,7 +379,7 @@ def unblock_customer(id):
 @app.route('/show_professional_details', methods=['GET'])
 def show_professional_details():
     pro_id = request.args.get('id')
-    source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
+    source_page = request.args.get('source', 'admin_dashboard') 
     professional = Professional.query.get(pro_id)
     status = request.args.get('status', 'default_status')
     search_query = request.args.get('search_query', '')
@@ -372,7 +388,7 @@ def show_professional_details():
 
     if not professional:
         flash('Professional not found!', 'danger')
-        return redirect(url_for(source_page))  # Redirect back to the source page
+        return redirect(url_for(source_page)) 
     
     notifications = Notification.query.order_by(Notification.timestamp.desc()).all()
     unread_count = sum(1 for notification in notifications if not notification.is_read)
@@ -386,7 +402,7 @@ def show_professional_details():
     entity = 'professionals'
 
     return render_template(
-        f'admin/{source_page}.html',  # Render the correct page
+        f'admin/{source_page}.html', 
         professionals=professionals,
         customers=customers,
         services=services,
@@ -403,7 +419,7 @@ def show_professional_details():
         status=status,
         search_query=search_query,
         filtered_data=filtered_data,
-        modal_item=modal_item,  # Pass source_page to the template
+        modal_item=modal_item, 
         unread_count=unread_count
     )
     
@@ -414,7 +430,7 @@ def show_professional_details():
 @app.route('/show_customer_details', methods=['GET'])
 def show_customer_details():
     customer_id = request.args.get('id')
-    source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
+    source_page = request.args.get('source', 'admin_dashboard') 
     customer = Customer.query.get(customer_id)
 
     if not customer:
@@ -422,7 +438,7 @@ def show_customer_details():
         return redirect(url_for(source_page)) 
     
     notifications = Notification.query.order_by(Notification.timestamp.desc()).all()
-    unread_count = sum(1 for notification in notifications if not notification.is_read) # Redirect back to the source page
+    unread_count = sum(1 for notification in notifications if not notification.is_read) 
 
     professionals = Professional.query.all()
     customers = Customer.query.all()
@@ -430,7 +446,7 @@ def show_customer_details():
     requests = Request.query.all()
 
     return render_template(
-        f'admin/{source_page}.html',  # Render the correct page
+        f'admin/{source_page}.html',  
         professionals=professionals,
         customers=customers,
         services=services,
@@ -451,7 +467,7 @@ def show_customer_details():
 @app.route('/show_service_request_details', methods=['GET'])
 def show_service_request_details():
     req_id = request.args.get('id')
-    source_page = request.args.get('source', 'admin_dashboard')  # Determine source page
+    source_page = request.args.get('source', 'admin_dashboard') 
     service_request = Request.query.get(req_id)
 
     if not service_request:
@@ -459,9 +475,8 @@ def show_service_request_details():
         return redirect(url_for(source_page))
     
     notifications = Notification.query.order_by(Notification.timestamp.desc()).all()
-    unread_count = sum(1 for notification in notifications if not notification.is_read)  # Redirect back to the source page
+    unread_count = sum(1 for notification in notifications if not notification.is_read)
 
-    # Explicitly handle missing relationships
     customer_name = service_request.customer.name if service_request.customer else "Unknown"
     professional_name = service_request.professional.name if service_request.professional else "None"
     service_name = service_request.service.service_name if service_request.service else "N/A"
@@ -472,7 +487,7 @@ def show_service_request_details():
     requests = Request.query.all()
 
     return render_template(
-        f'admin/{source_page}.html',  # Render the correct page
+        f'admin/{source_page}.html', 
         professionals=professionals,
         customers=customers,
         services=services,
@@ -496,7 +511,7 @@ def show_service_request_details():
 
 @app.route('/admin_search', methods=['GET'])
 def admin_search():
-    entity = request.args.get('entity', 'services')  # Default to services
+    entity = request.args.get('entity', 'services')  
     status = request.args.get('status', '')
     search_query = request.args.get('search_query', '')
     id_filter = request.args.get('id', None)
@@ -547,7 +562,7 @@ def admin_search():
             query = query.filter_by(status=status)
         filtered_data = query.all()
 
-    # If viewing a specific ID (to show modal)
+  
     modal_item = None
     if id_filter:
         if entity == 'service_requests':
@@ -571,37 +586,25 @@ def admin_search():
 
 
 def generate_chart(data, chart_type, title, filename):
-    """
-    Generate a chart using matplotlib, save it as an image, and return the file path.
-
-    Args:
-        data (dict): Data for the chart, with keys as labels and values as numbers.
-        chart_type (str): The type of chart to generate ('pie', 'bar').
-        title (str): The title of the chart.
-        filename (str): The name of the output file to save in 'static/charts'.
-
-    Returns:
-        str: File path of the saved chart image.
-    """
-    # Ensure the charts directory exists
+   
     charts_dir = "static/charts"
     os.makedirs(charts_dir, exist_ok=True)
 
-    # Handle the case where data is empty or all values are zero
+    
     if not data or all(value == 0 for value in data.values()):
         plt.figure(figsize=(6, 4))
         plt.text(0.5, 0.5, "No data available", ha='center', va='center', fontsize=14, alpha=0.6)
         plt.title(title)
-        plt.axis('off')  # Hide axes
+        plt.axis('off') 
         filepath = os.path.join(charts_dir, filename)
         plt.savefig(filepath, bbox_inches="tight")
         plt.close()
         return filepath
 
-    # Filter out invalid data (e.g., NaN or zero values)
+    
     valid_data = {k: v for k, v in data.items() if not np.isnan(v) and v > 0}
 
-    # Generate the chart
+   
     plt.figure(figsize=(6, 4))
     if chart_type == "pie":
         plt.pie(valid_data.values(), labels=valid_data.keys(), autopct="%1.1f%%", startangle=140)
@@ -609,11 +612,11 @@ def generate_chart(data, chart_type, title, filename):
     elif chart_type == "bar":
         plt.bar(valid_data.keys(), valid_data.values(), color="skyblue")
         plt.title(title)
-        plt.xticks(rotation=45, ha="right")  # Rotate x-axis labels for better readability
+        plt.xticks(rotation=45, ha="right") 
     else:
         raise ValueError(f"Unsupported chart type: {chart_type}")
 
-    # Save the chart as an image
+    
     filepath = os.path.join(charts_dir, filename)
     plt.savefig(filepath, bbox_inches="tight")
     plt.close()
@@ -624,15 +627,14 @@ def generate_chart(data, chart_type, title, filename):
 
 @app.route("/admin_summary")
 def admin_summary():
-    os.makedirs("static/charts", exist_ok=True)  # Ensure charts directory exists
+    os.makedirs("static/charts", exist_ok=True) 
 
-    # Query data
     total_professionals = Professional.query.count()
     total_customers = Customer.query.count()
     total_requests = Request.query.count()
     pending_approvals = Professional.query.filter_by(status="pending").count()
 
-    # Service category distribution
+   
     services = Service.query.all()
     service_category_distribution = {
         service.service_name: Request.query.filter_by(service_id=service.id).count() for service in services
@@ -641,7 +643,7 @@ def admin_summary():
         service_category_distribution, "pie", "Service Categories Distribution", "service_category.png"
     )
 
-    # Service requests by month
+    
     months_order = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December",
@@ -654,7 +656,6 @@ def admin_summary():
         service_requests_by_month, "bar", "Service Requests by Month", "requests_by_month.png"
     )
 
-    # Professional status distribution
     professional_status_distribution = {
         "Approved": Professional.query.filter_by(status="approved").count(),
         "Pending": Professional.query.filter_by(status="pending").count(),
@@ -664,7 +665,6 @@ def admin_summary():
         professional_status_distribution, "pie", "Professional Status Distribution", "professional_status.png"
     )
 
-    # Service request status distribution
     service_request_status_distribution = {
         "requested": Request.query.filter_by(status="requested").count(),
         "accepted": Request.query.filter(
@@ -699,6 +699,11 @@ def admin_summary():
 @app.route('/professional_dashboard')
 @login_required
 def professional_dashboard():
+
+    if current_user.status == 'blocked':
+        flash('Your account is blocked. Please contact support.', 'warning')
+        return redirect(url_for('blocked_user_page'))
+    
     professional_id = session.get('user_id')
     professional = db.session.get(Professional, professional_id)
 
@@ -706,26 +711,22 @@ def professional_dashboard():
         flash('Professional not found.', 'danger')
         return redirect(url_for('login'))
 
-    # Fetch all requested services that match the professional's service type
     all_requested_services = Request.query.filter(
         Request.status == 'requested',
         Request.professional_id.is_(None),
         Request.service.has(Service.service_name == professional.service_type)  # Filter by service type
     ).all()
 
-    # Filter out requests rejected by this professional
     requested_services = [
         request for request in all_requested_services
         if professional_id not in (request.rejected_by or [])
     ]
 
-    # Accepted services
     accepted_services = Request.query.filter(
         Request.professional_id == professional_id,
         Request.status.in_(['pending', 'in progress'])
     ).all()
 
-    # Closed services
     closed_services = Request.query.filter(
         Request.professional_id == professional_id,
         Request.status.in_(['review pending', 'closed'])
@@ -748,19 +749,19 @@ def professional_dashboard():
 
 @app.route('/professional_search', methods=['GET'])
 def professional_search():
-    # Get the logged-in professional ID
+  
     professional_id = session.get('user_id')
     professional = Professional.query.get(professional_id)
 
-    # Retrieve filters from request
+  
     status = request.args.get('status', '')
     search_query = request.args.get('search_query', '')
 
-    # Query for service requests assigned to the logged-in professional
+   
     query = Request.query.filter_by(professional_id=professional_id)
 
     if status:
-        query = query.filter_by(status=status)  # Filter by status if provided
+        query = query.filter_by(status=status)  
 
     if search_query:
         query = query.filter(
@@ -768,7 +769,7 @@ def professional_search():
         Request.service.has(Service.service_name.contains(search_query)) |
         Request.request_date.contains(search_query) |
         Request.customer.has(Customer.pincode.contains(search_query))
-    )  # Filter by customer name, service name, request date, or pincode  # Filter by customer or service name
+    )  
 
     filtered_data = query.all()
 
@@ -784,29 +785,25 @@ def professional_search():
 
 @app.route("/professional_summary")
 def professional_summary():
-    professional_id = session.get("user_id")  # Assuming professional's ID is stored in session
+    professional_id = session.get("user_id")  
     professional = Professional.query.get(professional_id)
 
-    # Statistics
     completed_services = Request.query.filter_by(professional_id=professional_id, status="closed").count()
     accepted_services = Request.query.filter_by(professional_id=professional_id).filter(
         Request.status.in_(["pending", "in progress"])
     ).count()
     pending_requests = Request.query.filter_by(status="requested").count()
 
-    # Compute total earnings
     total_earnings = db.session.query(db.func.sum(Service.price)).join(Request).filter(
         Request.professional_id == professional_id,
         Request.status == "closed"
     ).scalar() or 0.0
 
-    # Retrieve feedbacks
     feedbacks = Feedback.query.filter_by(professional_id=professional_id).all()
 
-    # Calculate average rating
+
     average_rating = round(sum([f.rating for f in feedbacks]) / len(feedbacks), 1) if feedbacks else 0
 
-    # Monthly Service Breakdown
     monthly_service_breakdown = {
         month: Request.query.filter_by(professional_id=professional_id).filter(
             extract("month", Request.request_date) == idx + 1
@@ -815,14 +812,12 @@ def professional_summary():
     }
     monthly_services_chart = generate_chart(monthly_service_breakdown, "bar", "Monthly Services", "monthly_services.png")
 
-    # Rating Distribution
     rating_distribution = {
         star: Feedback.query.filter_by(professional_id=professional_id, rating=star).count()
         for star in range(1, 6)
     }
     rating_distribution_chart = generate_chart(rating_distribution, "pie", "Rating Distribution", "rating_distribution.png")
 
-    # Customer Feedback
     customer_feedback = Feedback.query.filter_by(professional_id=professional_id).all()
 
     return render_template(
@@ -832,7 +827,7 @@ def professional_summary():
         accepted_services=accepted_services,
         pending_requests=pending_requests,
         total_earnings=total_earnings,
-        average_rating=average_rating,  # Ensure this is defined
+        average_rating=average_rating,  
         monthly_service_breakdown=monthly_service_breakdown,
         rating_distribution=rating_distribution,
         customer_feedback=customer_feedback,
@@ -846,7 +841,7 @@ def professional_summary():
 
 @app.route('/professional_profile', methods=['GET', 'POST'])
 def professional_profile():
-    professional_id = session.get('user_id')  # Assuming the professional's ID is stored in the session
+    professional_id = session.get('user_id')  
     professional = Professional.query.get(professional_id)
 
     if request.method == 'POST':
@@ -858,10 +853,9 @@ def professional_profile():
         pincode = request.form.get('pincode')
         phone_number = request.form.get('contact')
 
-        # Update professional details
         professional.name = name
         if password:
-            professional.password = password  # The setter will hash it
+            professional.password = password  
         professional.service_type = service_type
         professional.experience = int(experience)
         professional.address = address
@@ -879,14 +873,13 @@ def update_profile():
     """
     Update the profile of the logged-in professional.
     """
-    professional_id = session.get('user_id')  # Assuming the professional is logged in
+    professional_id = session.get('user_id')  
     professional = Professional.query.get(professional_id)
 
     if not professional:
         flash('Professional not found!', 'danger')
         return redirect(url_for('professional_profile'))
 
-    # Get form data
     name = request.form.get('name')
     password = request.form.get('password')
     service_type = request.form.get('service')
@@ -895,9 +888,9 @@ def update_profile():
     pincode = request.form.get('pincode')
     phone_number = request.form.get('contact')
 
-    # Update professional fields
+
     professional.name = name
-    if password:  # Only update password if provided
+    if password:  
         professional.password = password
     professional.service_type = service_type
     professional.experience = int(experience) if experience.isdigit() else professional.experience
@@ -920,12 +913,12 @@ def update_profile():
 
 @app.route('/accept_service/<id>', methods=['POST'])
 def accept_service(id):
-    professional_id = session.get('user_id')  # Assuming professional is logged in
+    professional_id = session.get('user_id')
     service_request = Request.query.get(id)
 
     if service_request and service_request.status == 'requested':
         service_request.status = 'pending'
-        service_request.professional_id = professional_id  # Assign to the logged-in professional
+        service_request.professional_id = professional_id  
 
         service_request.customer_status = 'accepted'
         db.session.commit()
@@ -936,31 +929,28 @@ def accept_service(id):
     return redirect(url_for('professional_dashboard'))  
 
 
-     # Assuming professional is logged in
-import json
 
 @app.route('/reject_service/<id>', methods=['POST'])
 def reject_service(id):
-    professional_id = session.get('user_id')  # Get the logged-in professional ID
-    service_request = db.session.get(Request, id)  # Fetch the service request
-
+    professional_id = session.get('user_id')  
+    service_request = db.session.get(Request, id)  
     if service_request and service_request.status == 'requested':
-        # Initialize `rejected_by` if it's None or invalid
+        
         try:
             if isinstance(service_request.rejected_by, str):
                 service_request.rejected_by = json.loads(service_request.rejected_by)
         except json.JSONDecodeError:
-            service_request.rejected_by = []  # Reset to an empty list if invalid
+            service_request.rejected_by = []  
 
-        # Ensure `rejected_by` is a list
+        
         if not isinstance(service_request.rejected_by, list):
             service_request.rejected_by = []
 
-        # Append the professional ID if not already present
+       
         if professional_id not in service_request.rejected_by:
             service_request.rejected_by.append(professional_id)
 
-        # Serialize back to JSON if necessary
+       
         service_request.rejected_by = json.dumps(service_request.rejected_by)
 
         try:
@@ -982,12 +972,12 @@ def reject_service(id):
 
 @app.route('/start_service/<id>', methods=['POST'])
 def start_service(id):
-    professional_id = session.get('user_id')  # Assuming professional is logged in
+    professional_id = session.get('user_id')  
     service_request = Request.query.get(id)
     source_page = request.args.get('source', 'professional_dashboard')
 
     if service_request and service_request.professional_id == professional_id and service_request.status == 'pending':
-        service_request.status = 'in progress'  # Update status to "in progress"
+        service_request.status = 'in progress'  
         db.session.commit()
         flash('Service started successfully!', 'success')
     else:
@@ -997,13 +987,13 @@ def start_service(id):
 
 @app.route('/close_service/<id>', methods=['POST'])
 def close_service(id):
-    professional_id = session.get('user_id')  # Assuming professional is logged in
+    professional_id = session.get('user_id') 
     service_request = Request.query.get(id)
     source_page = request.args.get('source', 'professional_dashboard')
 
     if service_request and service_request.professional_id == professional_id and service_request.status == 'in progress':
-        service_request.status = 'review pending'  # Update status to "review pending"
-        service_request.completion_date = datetime.utcnow()  # Set completion date
+        service_request.status = 'review pending' 
+        service_request.completion_date = datetime.utcnow()  
         db.session.commit()
         flash('Service closed successfully! Awaiting customer review.', 'success')
     else:
@@ -1019,6 +1009,11 @@ def close_service(id):
 @app.route('/customer_dashboard', methods=['GET', 'POST'])
 @login_required
 def customer_dashboard():
+
+    if current_user.status == 'blocked':
+        flash('Your account is blocked. Please contact support.', 'warning')
+        return redirect(url_for('blocked_user_page'))
+    
     customer_id = session.get('user_id')
     customer = User.query.get(customer_id)
 
@@ -1036,7 +1031,7 @@ def customer_dashboard():
     
     service_history = Request.query.filter_by(customer_id=customer_id).order_by(Request.request_date.desc()).all()
     
-    # Pass the request object to the template
+
     return render_template(
         'customer/customer_dashboard.html',
         customer=customer,
@@ -1044,7 +1039,7 @@ def customer_dashboard():
         best_packages=best_packages,
         service_history=service_history,
         selected_service_name=selected_service_name,
-        request=request  # Add this line to pass the request object
+        request=request  
     )
     
 
@@ -1053,19 +1048,17 @@ def customer_dashboard():
 
 @app.route('/book_service/<id>', methods=['POST'])
 def book_service(id):
-    customer_id = session.get('user_id')  # Get the logged-in user ID
-    service = Service.query.get(id)  # Retrieve the service based on the ID
-
+    customer_id = session.get('user_id') 
+    service = Service.query.get(id)  
     if service:
-        # Retrieve the date from the form
+       
         request_date_str = request.form.get('request_date')
         try:
-            request_date = datetime.strptime(request_date_str, '%Y-%m-%d')  # Convert to a datetime object
+            request_date = datetime.strptime(request_date_str, '%Y-%m-%d')  
         except ValueError:
             flash('Invalid date format. Please select a valid date.', 'danger')
-            return redirect(request.referrer or url_for('customer_dashboard'))  # Redirect to the referring page
+            return redirect(request.referrer or url_for('customer_dashboard')) 
 
-        # Create a new service request
         new_request = Request(
             customer_id=customer_id,
             service_id=service.id,
@@ -1082,7 +1075,6 @@ def book_service(id):
     else:
         flash('Service not found.', 'danger')
 
-    # Redirect back to the referring page or default to the customer dashboard
     return redirect(request.referrer or url_for('customer_dashboard'))
 
 
@@ -1094,7 +1086,7 @@ def cancel_service(id):
     service_request = Request.query.get(id)
     
     if service_request and service_request.customer_id == customer_id and service_request.status in ['requested', 'pending']:
-        service_request.status = 'canceled'  # Update the status to 'canceled'
+        service_request.status = 'canceled' 
         db.session.commit()
         flash('Service request canceled successfully!', 'success')
     else:
@@ -1111,7 +1103,6 @@ def add_review(id):
     review = request.form.get('review')
     rating = request.form.get('rating')
 
-    # Debugging prints
     print(f"Service Request: {service_request}")
     print(f"Customer ID from session: {customer_id}")
     print(f"Service Request Status: {service_request.status if service_request else 'N/A'}")
@@ -1152,14 +1143,14 @@ def add_review(id):
 
 @app.route('/customer_search', methods=['GET'])
 def customer_search():
-    # Get the logged-in customer ID
+  
     customer_id = session.get('user_id')
     customer = Customer.query.get(customer_id)
 
-    # Retrieve search query from request
+   
     search_query = request.args.get('search_query', '')
 
-    # Query services based on the search input
+   
     query = Service.query
     if search_query:
         query = query.filter(Service.service_name.contains(search_query) | Service.service_description.contains(search_query))
@@ -1175,13 +1166,13 @@ def customer_search():
 
 @app.route("/customer_summary")
 def customer_summary():
-    customer_id = session.get("user_id")  # Assuming customer's ID is stored in session
+    customer_id = session.get("user_id") 
     customer = Customer.query.get(customer_id)
 
-    # Total Services Taken
+
     total_services_taken = Request.query.filter_by(customer_id=customer_id).count()
 
-    # Service Requests by Type
+
     services = Service.query.all()
     service_requests = {
         service.service_name: Request.query.filter_by(customer_id=customer_id, service_id=service.id).count()
@@ -1201,7 +1192,7 @@ def customer_summary():
 
 @app.route('/customer_profile', methods=['GET', 'POST'])
 def customer_profile():
-    customer_id = session.get('user_id')  # Assuming the customer ID is stored in the session
+    customer_id = session.get('user_id')  
     customer = Customer.query.get(customer_id)
 
     if request.method == 'POST':
@@ -1211,10 +1202,9 @@ def customer_profile():
         pincode = request.form.get('pincode')
         phone_number = request.form.get('contact')
 
-        # Update customer details
         customer.name = name
         if password:
-            customer.password = password  # Assuming the password setter hashes it
+            customer.password = password  
         customer.address = address
         customer.pincode = pincode
         customer.phone_number = phone_number
@@ -1228,23 +1218,22 @@ def customer_profile():
 
 @app.route('/update_customer_profile', methods=['POST'])
 def update_customer_profile():
-    customer_id = session.get('user_id')  # Assuming the customer is logged in
+    customer_id = session.get('user_id')  
     customer = Customer.query.get(customer_id)
 
     if not customer:
         flash('Customer not found!', 'danger')
         return redirect(url_for('customer_profile'))
 
-    # Get form data
+
     name = request.form.get('name')
     password = request.form.get('password')
     address = request.form.get('address')
     pincode = request.form.get('pincode')
     phone_number = request.form.get('contact')
 
-    # Update customer fields
     customer.name = name
-    if password:  # Only update password if provided
+    if password: 
         customer.password = password
     customer.address = address
     customer.pincode = pincode
@@ -1264,5 +1253,5 @@ def update_customer_profile():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  # Ensure tables are created
+        db.create_all()  
     app.run(debug=True)

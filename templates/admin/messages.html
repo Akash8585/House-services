@@ -87,9 +87,16 @@
                                     <p>{{ notification.message }}</p>
                                 </div>
                                 <div class="message-footer">
-                                    <span>Sender ID: {{ notification.sender_id }}</span>
+                                    {% if notification.customer_id %}
+                                        <span>Sender: Customer ID - {{ notification.customer_id }}</span>
+                                    {% elif notification.professional_id %}
+                                        <span>Sender: Professional ID - {{ notification.professional_id }}</span>
+                                    {% else %}
+                                        <span>Sender: Unknown</span>
+                                    {% endif %}
                                     <span>Type: {{ notification.type }}</span>
                                 </div>
+                                
                             </div>
                             {% else %}
                             <p>No new messages.</p>

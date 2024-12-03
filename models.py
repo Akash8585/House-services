@@ -6,18 +6,17 @@ from db import db
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import ARRAY  # Use ARRAY for PostgreSQL
+from sqlalchemy.dialects.postgresql import ARRAY 
 from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON 
 
 
-# Function to generate unique IDs
+
 def generate_unique_id():
-    """Generate a unique 6-character ID with numbers and alphabets."""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choices(characters, k=6))
 
 
-# User Model
+
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     
@@ -28,18 +27,18 @@ class User(db.Model, UserMixin):
     address = db.Column(db.String(300), nullable=True)
     pincode = db.Column(db.String(10), nullable=True)
     phone_number = db.Column(db.String(15), nullable=True)
-    role = db.Column(db.String(50), nullable=False)  # Customer or Professional
+    role = db.Column(db.String(50), nullable=False)  
 
     __mapper_args__ = {
     'polymorphic_identity': 'user',
-    'polymorphic_on': role,  # This allows loading unknown roles without crashing
+    'polymorphic_on': role,  
     }
 
     def __init__(self, *args, **kwargs):
            super().__init__(*args, **kwargs)
            print(f"User created/modified: ID={self.id}, Role={self.role}")
 
-    # Password Hashing and Verification
+
     @property
     def password(self):
         raise AttributeError("Password is not readable!")
@@ -58,7 +57,6 @@ class User(db.Model, UserMixin):
         return match
 
 
-# Admin Model
 class Admin(User):
     __tablename__ = 'admins'
     
@@ -69,7 +67,7 @@ class Admin(User):
     }
 
 
-# Professional Model
+
 class Professional(User):
     __tablename__ = 'professionals'
     
@@ -83,7 +81,7 @@ class Professional(User):
     }
 
 
-# Customer Model
+
 class Customer(User):
     __tablename__ = 'customers'
     
@@ -94,7 +92,6 @@ class Customer(User):
         'polymorphic_identity': 'customer',
     }
 
-    # Hybrid property to calculate total requests dynamically
     @hybrid_property
     def total_requests(self):
         return len(self.requests)
@@ -108,8 +105,6 @@ class Customer(User):
         )
 
 
-# Service Model
-# Service Model
 class Service(db.Model):
     __tablename__ = 'services'
     
@@ -117,19 +112,11 @@ class Service(db.Model):
     service_name = db.Column(db.String(100), nullable=False)
     service_description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Float, nullable=False)
-    duration = db.Column(db.Float, nullable=True)  # Use Float if you need fractional hours # Add duration (only date) column
-
-    # Relationship to Request without backref
+    duration = db.Column(db.Float, nullable=True)  
   
     requests = db.relationship('Request', back_populates='service', lazy=True, passive_deletes=True)
 
     
-
-
-
-# Request Model
-# Request Model
-# Feedback Model
 class Feedback(db.Model):
     __tablename__ = 'feedback'
     
@@ -143,10 +130,10 @@ class Feedback(db.Model):
 
     customer = db.relationship("Customer", backref="feedbacks")
     professional = db.relationship("Professional", backref="feedbacks")
-    # Remove the backref here to avoid conflict
+    
     request = db.relationship('Request', back_populates='feedbacks')
 
-# Request Model
+
 class Request(db.Model):
     __tablename__ = 'requests'
     
@@ -166,16 +153,21 @@ class Request(db.Model):
     feedbacks = db.relationship('Feedback', back_populates='request', lazy=True)
 
 
-# Notification Model
+
 class Notification(db.Model):
     __tablename__ = 'notifications'
     
     id = db.Column(db.String(6), primary_key=True, default=generate_unique_id, unique=True)
-    sender_id = db.Column(db.String(6), db.ForeignKey('users.id'), nullable=False)
+    customer_id = db.Column(db.String(6), db.ForeignKey('customers.id'), nullable=True)
+    professional_id = db.Column(db.String(6), db.ForeignKey('professionals.id'), nullable=True)
     type = db.Column(db.String(50), nullable=False)  
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
+    
+    customer = db.relationship("Customer", backref="notifications_sent", foreign_keys=[customer_id])
+    professional = db.relationship("Professional", backref="notifications_sent", foreign_keys=[professional_id])
+
 
 
 

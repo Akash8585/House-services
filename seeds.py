@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from faker import Faker
 from werkzeug.security import generate_password_hash
 from db import db
-from models import User, Admin, Professional, Customer, Service, Request, Feedback, Notification
+from models import Admin, Professional, Customer, Service, Request, Feedback, Notification
 
 fake = Faker()
 
@@ -21,42 +21,13 @@ def seed_users():
     )
     db.session.add(admin)
 
-    # Create a test professional
-    test_professional = Professional(
-        id="PROF001",
-        name="John Doe",
-        email="john.professional@example.com",
-        password=hash_password("professional123"),
-        address="123 Professional St, City",
-        pincode="123456",
-        phone_number="9876543210",
-        role="professional",
-        service_type="Plumbing",
-        experience=5,
-        status="approved"
-    )
-    db.session.add(test_professional)
-
-    # Create a test customer
-    test_customer = Customer(
-        id="CUST001",
-        name="Jane Smith",
-        email="jane.customer@example.com",
-        password=hash_password("customer123"),
-        address="456 Customer Ave, Town",
-        pincode="654321",
-        phone_number="9876543211",
-        role="customer"
-    )
-    db.session.add(test_customer)
-
-    # Create additional professionals
+    # Create professionals
     for _ in range(40):
         professional = Professional(
             id=fake.unique.uuid4()[:6].upper(),
             name=fake.name(),
             email=fake.email(),
-            password=hash_password(fake.password()),
+            password=hash_password("professional123"),
             address=fake.address(),
             pincode=fake.postcode(),
             phone_number=fake.phone_number(),
@@ -67,13 +38,13 @@ def seed_users():
         )
         db.session.add(professional)
 
-    # Create additional customers
+    # Create customers
     for _ in range(60):
         customer = Customer(
             id=fake.unique.uuid4()[:6].upper(),
             name=fake.name(),
             email=fake.email(),
-            password=hash_password(fake.password()),
+            password=hash_password("customer123"),
             address=fake.address(),
             pincode=fake.postcode(),
             phone_number=fake.phone_number(),
@@ -103,7 +74,6 @@ def seed_services():
     db.session.commit()
 
 def seed_requests():
-    # Fetch customers and professionals
     customers = Customer.query.all()
     professionals = Professional.query.filter_by(status="approved").all()
     services = Service.query.all()
@@ -112,21 +82,13 @@ def seed_requests():
         customer = random.choice(customers)
         service = random.choice(services)
 
-        # Assign professional 50% of the time
-        assign_professional = random.choice([True, False])
-        professional = random.choice(professionals) if assign_professional and professionals else None
+        professional = random.choice(professionals) if random.choice([True, False]) else None
 
         request_date = fake.date_this_year()
-
-        # Determine status
-        if not professional:
-            status = "requested"
-        else:
-            status = random.choice(["accepted", "pending", "in progress", "review pending", "closed"])
-
-        completion_date = None
-        if status in ["review pending", "closed"]:
-            completion_date = request_date
+        status = "requested" if not professional else random.choice(
+            ["accepted", "pending", "in progress", "review pending", "closed"]
+        )
+        completion_date = request_date + timedelta(days=random.randint(1, 10)) if status == "closed" else None
 
         db.session.add(Request(
             id=fake.unique.uuid4()[:6].upper(),
@@ -140,12 +102,10 @@ def seed_requests():
 
     db.session.commit()
 
-
 def seed_feedbacks():
-    # Fetch completed requests
-    completed_requests = Request.query.filter_by(status="closed").all()
+    closed_requests = Request.query.filter_by(status="closed").all()
 
-    for request in completed_requests:
+    for request in closed_requests:
         db.session.add(Feedback(
             id=fake.unique.uuid4()[:6].upper(),
             request_id=request.id,
@@ -153,24 +113,28 @@ def seed_feedbacks():
             professional_id=request.professional_id,
             rating=random.randint(1, 5),
             comments=fake.sentence(),
-            feedback_date=request.completion_date + timedelta(days=random.randint(1, 3))
+            feedback_date=request.completion_date + timedelta(days=1)
         ))
 
     db.session.commit()
 
 def seed_notifications():
-    users = User.query.all()
+    customers = Customer.query.all()
+    professionals = Professional.query.all()
 
-    for _ in range(20):
-        sender = random.choice(users)
-        db.session.add(Notification(
+    for _ in range(50):
+        sender = random.choice(customers + professionals)
+
+        notification = Notification(
             id=fake.unique.uuid4()[:6].upper(),
-            sender_id=sender.id,
+            customer_id=sender.id if isinstance(sender, Customer) else None,
+            professional_id=sender.id if isinstance(sender, Professional) else None,
             type=random.choice(["Review Request", "Blocked User"]),
             message=fake.sentence(),
             timestamp=datetime.utcnow(),
             is_read=random.choice([True, False])
-        ))
+        )
+        db.session.add(notification)
 
     db.session.commit()
 
