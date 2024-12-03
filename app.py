@@ -511,17 +511,20 @@ def show_service_request_details():
 
 @app.route('/admin_search', methods=['GET'])
 def admin_search():
-    entity = request.args.get('entity', 'services')  
-    status = request.args.get('status', '')
-    search_query = request.args.get('search_query', '')
-    id_filter = request.args.get('id', None)
+    # Fetch 'entity', 'status', and 'search_query' from request arguments
+    entity = request.args.get('entity', 'services')  # Default to 'services' if not provided
+    status = request.args.get('status', '')  # Default to an empty string if not provided
+    search_query = request.args.get('search_query', '')  # Default to an empty string if not provided
+    id_filter = request.args.get('id', None)  # Optional ID filter
 
-    filtered_data = []
+    filtered_data = []  # Initialize an empty list for results
 
+    # Handle different entities for search
     if entity == 'services':
         query = Service.query
         if search_query:
             query = query.filter(
+                Service.id.contains(search_query) |  # Match by ID as a string
                 Service.service_name.contains(search_query) |
                 Service.service_description.contains(search_query)
             )
@@ -531,7 +534,7 @@ def admin_search():
         query = Request.query
         if search_query:
             query = query.filter(
-                Request.id.contains(search_query) |
+                Request.id.contains(search_query) |  # Match by ID as a string
                 Request.customer.has(Customer.name.contains(search_query))
             )
         if status == 'accepted':
@@ -544,6 +547,7 @@ def admin_search():
         query = Professional.query
         if search_query:
             query = query.filter(
+                Professional.id.contains(search_query) |  # Match by ID as a string
                 Professional.name.contains(search_query) |
                 Professional.service_type.contains(search_query)
             )
@@ -555,6 +559,7 @@ def admin_search():
         query = Customer.query
         if search_query:
             query = query.filter(
+                Customer.id.contains(search_query) |  # Match by ID as a string
                 Customer.name.contains(search_query) |
                 Customer.address.contains(search_query)
             )
@@ -562,7 +567,7 @@ def admin_search():
             query = query.filter_by(status=status)
         filtered_data = query.all()
 
-  
+    # Optional modal_item handling
     modal_item = None
     if id_filter:
         if entity == 'service_requests':
@@ -572,6 +577,7 @@ def admin_search():
         elif entity == 'customers':
             modal_item = Customer.query.get(id_filter)
 
+    # Render the search results
     return render_template(
         'admin/admin_search.html',
         entity=entity,
@@ -580,6 +586,7 @@ def admin_search():
         filtered_data=filtered_data,
         modal_item=modal_item
     )
+
 
 
 
@@ -845,7 +852,7 @@ def professional_profile():
     professional = Professional.query.get(professional_id)
 
     if request.method == 'POST':
-        name = request.form.get('name')
+        name = request.form.get('name') 
         password = request.form.get('password')
         service_type = request.form.get('service')
         experience = request.form.get('experience')
@@ -1102,7 +1109,7 @@ def add_review(id):
     service_request = Request.query.get(id)
     review = request.form.get('review')
     rating = request.form.get('rating')
-
+    print(f"Customer ID from session: {customer_id}")
     print(f"Service Request: {service_request}")
     print(f"Customer ID from session: {customer_id}")
     print(f"Service Request Status: {service_request.status if service_request else 'N/A'}")
@@ -1116,7 +1123,7 @@ def add_review(id):
     except ValueError:
         flash('Invalid rating value.', 'danger')
         return redirect(url_for('customer_dashboard'))
-        flash('Invalid rating value.', 'danger')
+
     if service_request and service_request.customer_id == customer_id and service_request.status == 'review pending':
         service_request.status = 'closed'
         new_feedback = Feedback(
@@ -1176,7 +1183,7 @@ def customer_summary():
     services = Service.query.all()
     service_requests = {
         service.service_name: Request.query.filter_by(customer_id=customer_id, service_id=service.id).count()
-        for service in services
+        for service in services 
     }
     service_requests_chart = generate_chart(
         service_requests, "bar", "Service Requests Chart", "service_requests_chart.png"

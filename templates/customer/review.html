@@ -91,28 +91,29 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-        $('#addReviewModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var requestId = button.data('request-id');
-            var serviceName = button.data('service-name');
-            var details = button.data('details');
-            var professionalName = button.data('professional-name');
-            var date = button.data('date');
-            var price = button.data('price');
-            var source = button.data('source');  
-
-            var modal = $(this);
-            modal.find('#serviceId').val(requestId);
-            modal.find('#serviceName').val(serviceName);
-            modal.find('#details').val(details);
-            modal.find('#professionalName').val(professionalName);
-            modal.find('#date').val(date);
-            modal.find('#price').val(price);
-            
-            modal.find('form').attr('action', `/book_service/${serviceId}?source=${source}`);
+        document.addEventListener('DOMContentLoaded', function() {
+            $('#addReviewModal').on('show.bs.modal', function(event) {
+                var button = $(event.relatedTarget); // Button that triggered the modal
+                var requestId = button.data('request-id'); // Extract info from data-* attributes
+                var serviceName = button.data('service-name');
+                var details = button.data('details');
+                var professionalName = button.data('professional-name');
+                var date = button.data('date');
+                var price = button.data('price');
+                var source = button.data('source');  
+    
+                var modal = $(this);
+                modal.find('#serviceId').val(requestId);
+                modal.find('#serviceName').val(serviceName);
+                modal.find('#details').val(details);
+                modal.find('#professionalName').val(professionalName);
+                modal.find('#date').val(date);
+                modal.find('#price').val(price);
+                
+                // Ensure serviceId is correctly used in the action URL
+                modal.find('form').attr('action', `/add_review/${requestId}?source=${source}`);
+            });
         });
-
-
     </script>
 </body>
 </html>
